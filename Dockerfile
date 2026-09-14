@@ -15,6 +15,10 @@ COPY package.json package-lock.json ./
 RUN npm ci --no-audit --no-fund
 
 COPY tsconfig.json tsconfig.node.json vite.config.ts tailwind.config.js postcss.config.js index.html ./
+# Bundle VITE_* env vars from .env into the production JS so the Blocks
+# client can boot at runtime. The runtime nginx stage only ships dist/,
+# so the values only appear baked into the static bundle.
+COPY .env .env
 COPY public ./public
 COPY src ./src
 
