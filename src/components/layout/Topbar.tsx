@@ -38,12 +38,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import {
   Command,
@@ -244,23 +238,90 @@ export function Topbar({
       <LanguageToggle />
       <ThemeToggle />
 
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={() => setNotifOpen(true)}
-        className="relative"
-        aria-label={`Notifications, ${unread} unread`}
-      >
-        <Bell className="h-5 w-5" />
-        {unread > 0 && (
-          <Badge
-            variant="danger"
-            className="absolute -right-1 -top-1 h-5 min-w-[20px] justify-center rounded-full px-1 text-[10px]"
+      <DropdownMenu open={notifOpen} onOpenChange={setNotifOpen}>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="relative"
+            aria-label={`Notifications, ${unread} unread`}
           >
-            {unread}
-          </Badge>
-        )}
-      </Button>
+            <Bell className="h-5 w-5" />
+            {unread > 0 && (
+              <Badge
+                variant="danger"
+                className="absolute -right-1 -top-1 h-5 min-w-[20px] justify-center rounded-full px-1 text-[10px]"
+              >
+                {unread}
+              </Badge>
+            )}
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-[380px] p-0">
+          <div className="flex items-center justify-between border-b px-3 py-2">
+            <div>
+              <p className="text-sm font-semibold leading-none">Notifications</p>
+              <p className="mt-1 text-xs text-muted-foreground">{unread} unread</p>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={async () => {
+                await notificationService.markAllRead();
+                const next = await notificationService.list();
+                setNotifications(next);
+              }}
+            >
+              <RefreshCw className="h-3.5 w-3.5" /> Mark all read
+            </Button>
+          </div>
+          <div className="max-h-[60vh] space-y-1 overflow-y-auto p-1">
+            {notifications.length === 0 && (
+              <div className="rounded-md border border-dashed p-8 text-center text-sm text-muted-foreground">
+                No notifications.
+              </div>
+            )}
+            {notifications.map((n) => {
+              const Icon = notifIcon(n.type);
+              return (
+                <button
+                  key={n.id}
+                  type="button"
+                  onClick={async () => {
+                    await notificationService.markRead(n.id);
+                    const next = await notificationService.list();
+                    setNotifications(next);
+                    setNotifOpen(false);
+                    if (n.href) navigate(n.href);
+                  }}
+                  className="flex w-full items-start gap-3 rounded-md bg-background p-3 text-left transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <span
+                    className={`mt-0.5 grid h-8 w-8 place-items-center rounded-full ${notifColor(n.type)}`}
+                  >
+                    <Icon className="h-4 w-4" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium leading-5">{n.title}</p>
+                    <p className="mt-0.5 text-xs leading-5 text-muted-foreground">
+                      {n.body}
+                    </p>
+                    <p className="mt-1 text-[11px] text-muted-foreground">
+                      {formatRelative(n.at)}
+                    </p>
+                  </div>
+                  {!n.read && (
+                    <span
+                      className="mt-1.5 h-2 w-2 rounded-full bg-primary"
+                      aria-hidden
+                    />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </DropdownMenuContent>
+      </DropdownMenu>
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -305,74 +366,6 @@ export function Topbar({
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-
-      {/* Notifications sheet */}
-      <Sheet open={notifOpen} onOpenChange={setNotifOpen}>
-        <SheetContent>
-          <SheetHeader>
-            <SheetTitle>Notifications</SheetTitle>
-          </SheetHeader>
-          <div className="mt-4 flex items-center justify-between">
-            <p className="text-xs text-muted-foreground">{unread} unread</p>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={async () => {
-                await notificationService.markAllRead();
-                const next = await notificationService.list();
-                setNotifications(next);
-              }}
-            >
-              <RefreshCw className="h-3.5 w-3.5" /> Mark all read
-            </Button>
-          </div>
-          <div className="mt-3 space-y-2 overflow-y-auto pb-8">
-            {notifications.length === 0 && (
-              <div className="rounded-md border border-dashed p-8 text-center text-sm text-muted-foreground">
-                No notifications.
-              </div>
-            )}
-            {notifications.map((n) => {
-              const Icon = notifIcon(n.type);
-              return (
-                <button
-                  key={n.id}
-                  type="button"
-                  onClick={async () => {
-                    await notificationService.markRead(n.id);
-                    const next = await notificationService.list();
-                    setNotifications(next);
-                    setNotifOpen(false);
-                    if (n.href) navigate(n.href);
-                  }}
-                  className="flex w-full items-start gap-3 rounded-lg border bg-background p-3 text-left transition-colors hover:bg-accent"
-                >
-                  <span
-                    className={`mt-0.5 grid h-8 w-8 place-items-center rounded-full ${notifColor(n.type)}`}
-                  >
-                    <Icon className="h-4 w-4" />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium leading-5">{n.title}</p>
-                    <p className="mt-0.5 text-xs leading-5 text-muted-foreground">
-                      {n.body}
-                    </p>
-                    <p className="mt-1 text-[11px] text-muted-foreground">
-                      {formatRelative(n.at)}
-                    </p>
-                  </div>
-                  {!n.read && (
-                    <span
-                      className="mt-1.5 h-2 w-2 rounded-full bg-primary"
-                      aria-hidden
-                    />
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </SheetContent>
-      </Sheet>
 
       {/* Command search */}
       <Dialog open={searchOpen} onOpenChange={setSearchOpen}>
