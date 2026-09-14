@@ -1,0 +1,13 @@
+{
+  "schemaName": "CaseTimelineEvent",
+  "schemaType": 1,
+  "collectionName": "CaseTimelineEvents",
+  "fields": [
+    { "name": "caseId", "type": "String", "requiredOn": "Insert" },
+    { "name": "actor", "type": "String" },
+    { "name": "actorRole", "type": "String", "description": "One of: field_officer | programme_coordinator | regional_manager" },
+    { "name": "action", "type": "String" },
+    { "name": "description", "type": "String" },
+    { "name": "timestamp", "type": "DateTime" }
+  ]
+}

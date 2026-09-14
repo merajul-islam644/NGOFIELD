@@ -1,0 +1,23 @@
+node_modules
+dist
+dist-ssr
+dist-types
+*.local
+.vite
+.DS_Store
+.env
+.env.local
+*.log
+*.tsbuildinfo
+.cert/
+npm-cache/
+.playwright-mcp/
+
+# Local dev screenshots / debug artifacts
+dashboard-after.png
+lang-en.png
+lang-bn.png
+palette-from-shortcut.png
+palette-from-sidebar.png
+search-moved.png
+search-moved-2.png

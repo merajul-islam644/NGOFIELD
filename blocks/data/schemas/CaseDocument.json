@@ -1,0 +1,12 @@
+{
+  "schemaName": "CaseDocument",
+  "schemaType": 1,
+  "collectionName": "CaseDocuments",
+  "fields": [
+    { "name": "caseId", "type": "String", "requiredOn": "Insert" },
+    { "name": "name", "type": "String" },
+    { "name": "type", "type": "String", "description": "One of: stipend_proof | id_card | income_certificate | school_certificate | medical_record | other" },
+    { "name": "required", "type": "Boolean" },
+    { "name": "collected", "type": "Boolean" }
+  ]
+}

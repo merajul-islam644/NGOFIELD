@@ -1,0 +1,19 @@
+{
+  "schemaName": "FollowUp",
+  "schemaType": 1,
+  "collectionName": "FollowUps",
+  "fields": [
+    { "name": "caseId", "type": "String", "requiredOn": "Insert" },
+    { "name": "householdId", "type": "String" },
+    { "name": "type", "type": "String", "description": "One of: Phone call | Household visit | School verification | Document collection | Programme review | Outcome verification" },
+    { "name": "dueDate", "type": "DateTime" },
+    { "name": "status", "type": "String", "description": "One of: Scheduled | In Progress | Completed | Overdue | Cancelled" },
+    { "name": "assignedOfficerId", "type": "String" },
+    { "name": "assignedOfficerName", "type": "String" },
+    { "name": "notes", "type": "String" },
+    { "name": "priority", "type": "String" },
+    { "name": "district", "type": "String" },
+    { "name": "programme", "type": "String" },
+    { "name": "completedAt", "type": "DateTime" }
+  ]
+}

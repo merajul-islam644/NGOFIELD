@@ -1,0 +1,29 @@
+{
+  "schemaName": "Case",
+  "schemaType": 1,
+  "collectionName": "Cases",
+  "fields": [
+    { "name": "householdId", "type": "String", "requiredOn": "Insert" },
+    { "name": "householdName", "type": "String" },
+    { "name": "programme", "type": "String", "description": "One of: Education | Livelihood | Health" },
+    { "name": "request", "type": "String" },
+    { "name": "district", "type": "String" },
+    { "name": "union", "type": "String" },
+    { "name": "village", "type": "String" },
+    { "name": "assignedOfficerId", "type": "String" },
+    { "name": "assignedOfficerName", "type": "String" },
+    { "name": "priority", "type": "String", "description": "One of: Low | Medium | High | Critical" },
+    { "name": "status", "type": "String", "description": "One of: New | Under Review | Approved | Assigned | In Progress | Waiting | Completed | Closed | Rejected" },
+    { "name": "need", "type": "String" },
+    { "name": "summary", "type": "String" },
+    { "name": "householdContext", "type": "String" },
+    { "name": "urgency", "type": "String" },
+    { "name": "suggestedActions", "type": "String", "isArray": true },
+    { "name": "documentsNeeded", "type": "String", "isArray": true },
+    { "name": "donorReportDraft", "type": "String" },
+    { "name": "stipendAmount", "type": "Float" },
+    { "name": "createdBy", "type": "String" },
+    { "name": "nextFollowUpAt", "type": "DateTime" },
+    { "name": "reviewNotes", "type": "String" }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "schemaName": "HouseholdMember",
+  "schemaType": 1,
+  "collectionName": "HouseholdMembers",
+  "fields": [
+    { "name": "householdId", "type": "String", "requiredOn": "Insert" },
+    { "name": "name", "type": "String", "requiredOn": "Insert" },
+    { "name": "relation", "type": "String" },
+    { "name": "age", "type": "Float" },
+    { "name": "notes", "type": "String" }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "schemaName": "AccessLog",
+  "schemaType": 1,
+  "collectionName": "AccessLogs",
+  "fields": [
+    { "name": "user", "type": "String" },
+    { "name": "userRole", "type": "String" },
+    { "name": "action", "type": "String" },
+    { "name": "resource", "type": "String" },
+    { "name": "reason", "type": "String" },
+    { "name": "timestamp", "type": "DateTime" }
+  ]
+}

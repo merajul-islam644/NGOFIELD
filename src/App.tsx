@@ -1,0 +1,89 @@
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { AuthProvider as BlocksAuthProvider } from "@/app/providers/AuthProvider";
+import { AuthProvider as AppAuthProvider } from "@/services/authService";
+import { RequireAuth, RedirectIfAuthenticated } from "@/app/router/guards";
+import { ToastProvider } from "@/services/toastService";
+import { ThemeProvider } from "@/services/themeService";
+import { I18nProvider } from "@/services/i18n";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { AppShell } from "@/components/layout/AppShell";
+import LoginPage from "@/features/auth/LoginPage";
+import CallbackPage from "@/features/auth/CallbackPage";
+import DashboardPage from "@/pages/Dashboard";
+import CasesPage from "@/pages/Cases";
+import NewCasePage from "@/pages/NewCase";
+import CaseDetailPage from "@/pages/CaseDetail";
+import HouseholdsPage from "@/pages/Households";
+import HouseholdProfilePage from "@/pages/HouseholdProfile";
+import FollowUpsPage from "@/pages/FollowUps";
+import TeamPage from "@/pages/Team";
+import ProgrammeDetailPage from "@/pages/ProgrammeDetail";
+import ProgrammeReportsPage from "@/pages/ProgrammeReports";
+import DonorReportsPage from "@/pages/DonorReports";
+import AccessLogsPage from "@/pages/AccessLogs";
+import SearchPage from "@/pages/Search";
+
+export default function App() {
+  return (
+    <ThemeProvider>
+      <I18nProvider>
+        <TooltipProvider delayDuration={150}>
+          <ToastProvider>
+            <BrowserRouter>
+              <BlocksAuthProvider>
+                {/* AppAuthProvider consumes BlocksAuthProvider and adapts the
+                    IAM session into the demo-shaped `User` the pages use. */}
+                <AppAuthProvider>
+                  <Routes>
+                    {/* /login/callback must NOT be wrapped in any auth guard — the
+                        user is by definition not yet authenticated when they land here. */}
+                    <Route path="/login/callback" element={<CallbackPage />} />
+                    <Route
+                      path="/login"
+                      element={
+                        <RedirectIfAuthenticated>
+                          <LoginPage />
+                        </RedirectIfAuthenticated>
+                      }
+                    />
+                    <Route
+                      element={
+                        <RequireAuth>
+                          <AppShell />
+                        </RequireAuth>
+                      }
+                    >
+                      <Route path="/" element={<DashboardPage />} />
+                      <Route path="/cases" element={<CasesPage />} />
+                      <Route path="/cases/new" element={<NewCasePage />} />
+                      <Route path="/cases/:id" element={<CaseDetailPage />} />
+                      <Route path="/households" element={<HouseholdsPage />} />
+                      <Route
+                        path="/households/:id"
+                        element={<HouseholdProfilePage />}
+                      />
+                      <Route path="/follow-ups" element={<FollowUpsPage />} />
+                      <Route path="/team" element={<TeamPage />} />
+                      <Route
+                        path="/programmes/:programmeSlug"
+                        element={<ProgrammeDetailPage />}
+                      />
+                      <Route
+                        path="/programme-reports"
+                        element={<ProgrammeReportsPage />}
+                      />
+                      <Route path="/donor-reports" element={<DonorReportsPage />} />
+                      <Route path="/access-logs" element={<AccessLogsPage />} />
+                      <Route path="/search" element={<SearchPage />} />
+                    </Route>
+                    <Route path="*" element={<Navigate to="/" replace />} />
+                  </Routes>
+                </AppAuthProvider>
+              </BlocksAuthProvider>
+            </BrowserRouter>
+          </ToastProvider>
+        </TooltipProvider>
+      </I18nProvider>
+    </ThemeProvider>
+  );
+}

@@ -1,0 +1,19 @@
+{
+  "schemaName": "Household",
+  "schemaType": 1,
+  "collectionName": "Households",
+  "fields": [
+    { "name": "name", "type": "String", "requiredOn": "Insert", "description": "Head-of-household display name" },
+    { "name": "district", "type": "String", "requiredOn": "Insert", "description": "One of: Kurigram | Gaibandha | Jamalpur | Cox's Bazar" },
+    { "name": "union", "type": "String" },
+    { "name": "village", "type": "String" },
+    { "name": "phone", "type": "String" },
+    { "name": "assignedOfficerId", "type": "String" },
+    { "name": "assignedArea", "type": "String" },
+    { "name": "activeProgrammes", "type": "String", "isArray": true, "description": "Subset of: Education | Livelihood | Health" },
+    { "name": "povertyScore", "type": "Float" },
+    { "name": "income", "type": "Float" },
+    { "name": "vulnerability", "type": "String" },
+    { "name": "healthNotes", "type": "String" }
+  ]
+}
