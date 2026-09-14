@@ -30,7 +30,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Alert } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { caseService, followUpService, householdService, officerService } from "@/services/caseService";
-import { useAuth } from "@/services/authService";
+import { useUser } from "@/app/providers/AuthProvider";
 import { useToast } from "@/services/toastService";
 import { cn, formatDate, formatRelative, initials, isOverdue } from "@/lib/utils";
 import type { CaseRecord, CaseStatus, FollowUp } from "@/types";
@@ -49,7 +49,7 @@ import { FollowUpDialog } from "@/components/domain/FollowUpDialog";
 
 export default function CaseDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { user } = useAuth();
+  const user = useUser();
   const { success, info } = useToast();
   const navigate = useNavigate();
   const [caseData, setCaseData] = useState<CaseRecord | null>(null);
@@ -378,10 +378,10 @@ export default function CaseDetailPage() {
               <CardTitle className="flex items-center gap-2"><Receipt className="h-4 w-4" /> Documents checklist</CardTitle>
               <CardDescription>Track which supporting documents have been collected.</CardDescription>
             </CardHeader>
-            <CardContent className="pt-0">
+            <CardContent className="pt-0 space-y-3">
               {caseData.documents.length === 0 ? (
                 <Alert variant="info" title="No documents required">
-                  This case has no document requirements yet. Add documents via the AI suggested-actions editor.
+                  This case has no document requirements yet. Generate a checklist from the AI’s suggested documents, or add a document manually.
                 </Alert>
               ) : (
                 <ul className="divide-y">
@@ -390,6 +390,15 @@ export default function CaseDetailPage() {
                       <input
                         type="checkbox"
                         defaultChecked={d.collected}
+                        onChange={async (e) => {
+                          try {
+                            await caseService.toggleDocument(d.id, e.target.checked, user?.name ?? "Unknown");
+                            success(e.target.checked ? "Document collected" : "Marked uncollected");
+                            load();
+                          } catch (err) {
+                            console.error(err);
+                          }
+                        }}
                         className="h-4 w-4 rounded border-input text-primary focus:ring-2 focus:ring-ring"
                       />
                       <div className="flex-1">
@@ -401,6 +410,47 @@ export default function CaseDetailPage() {
                   ))}
                 </ul>
               )}
+              <div className="flex flex-wrap gap-2 border-t pt-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!caseData.documentsNeeded?.length}
+                  onClick={async () => {
+                    try {
+                      await caseService.syncDocumentsFromDraft(caseData.id, user?.name ?? "Unknown");
+                      success("Document checklist generated");
+                      load();
+                    } catch (err) {
+                      console.error(err);
+                    }
+                  }}
+                >
+                  <ListChecks className="h-3.5 w-3.5" />
+                  Generate from AI draft ({caseData.documentsNeeded?.length ?? 0})
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={async () => {
+                    const name = window.prompt("Document name");
+                    if (!name?.trim()) return;
+                    try {
+                      await caseService.addDocument(
+                        caseData.id,
+                        { name: name.trim(), type: "other", required: true },
+                        user?.name ?? "Unknown",
+                      );
+                      success(`Document added: ${name.trim()}`);
+                      load();
+                    } catch (err) {
+                      console.error(err);
+                    }
+                  }}
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Add document
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -491,7 +541,7 @@ function ReassignDialog({
   officers: any[];
   onReassigned: () => void;
 }) {
-  const { user } = useAuth();
+  const user = useUser();
   const { success } = useToast();
   const [selected, setSelected] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);

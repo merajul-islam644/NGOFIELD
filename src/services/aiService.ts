@@ -1,9 +1,8 @@
-import { HOUSEHOLDS } from "@/data/households";
-import type { AIDraft, DuplicateRisk, Priority, Programme } from "@/types";
+import type { AIDraft, DuplicateRisk, Household, Priority, Programme } from "@/types";
 
 export interface AnalyzeInput {
   note: string;
-  householdId: string;
+  household: Household | null;
 }
 
 export interface AnalyzeProgress {
@@ -93,7 +92,7 @@ function extractSummary(note: string, household: string | null, village: string 
   return `Field note captured during household visit. Programme need and urgency identified below.`;
 }
 
-function buildHouseholdContext(household: ReturnType<typeof HOUSEHOLDS.find> | undefined, membersLine: string) {
+function buildHouseholdContext(household: Household | null, membersLine: string) {
   if (!household) return `Field note received — household profile to be verified on first follow-up visit. ${membersLine}`;
   return `${household.members.length}-member household in ${household.union}, ${household.village}. Previously supported programmes: ${household.activeProgrammes.length ? household.activeProgrammes.join(", ") : "none"}.`;
 }
@@ -148,37 +147,24 @@ function getDocumentsNeeded(programme: Programme): string[] {
 }
 
 function detectDuplicateRisk(
-  householdId: string,
+  household: Household | null,
   note: string,
   programme: Programme,
 ): DuplicateRisk | null {
-  const household = HOUSEHOLDS.find((h) => h.id === householdId);
   if (!household) return null;
-  // Critical demo: Rekha Bibi + Health history → always flag for Education
-  if (householdId === "HH-KUR-00821" && programme === "Education") {
-    return {
-      level: "medium",
-      summary:
-        "This household received a Health programme intervention approximately four months earlier (May 2026).",
-      relatedCaseId: "CASE-2026-00488",
-      relatedProgramme: "Health",
-      monthsAgo: 4,
-      detail:
-        "Prior case CASE-2026-00488 (Health referral — child nutrition) was completed after two consecutive healthy screenings. The household is known to the programme, which supports eligibility but should be flagged for coordinator review to avoid double-counting of household-level assistance.",
-    };
-  }
-  // Generic detection: any active programmes in household + matching need
+  // The historical demo flagged Rekha Bibi + Education → prior Health case.
+  // In the live app that hint lives on the Household schema (e.g. an
+  // `activeProgrammes` overlap with the new programme). The check below is
+  // a generic version of the same idea.
   if (household.activeProgrammes.includes(programme)) {
     return {
       level: "low",
       summary: `Household already enrolled in ${programme} programme.`,
-      relatedCaseId: undefined,
       relatedProgramme: programme,
       detail: "Cross-check history to ensure complementary support and avoid overlap.",
     };
   }
-  // Banglish: "VGD card nai" suggests previously considered for safety net
-  if (/VGD/i.test(note) && household.income && household.income < 6000) {
+  if (/VGD/i.test(note) && household.income !== undefined && household.income < 6000) {
     return {
       level: "low",
       summary: "Household income below safety-net threshold — verify no VGD overlap.",
@@ -208,7 +194,7 @@ export const aiService = {
   },
 
   async analyze(input: AnalyzeInput): Promise<AnalyzeResult> {
-    const household = HOUSEHOLDS.find((h) => h.id === input.householdId);
+    const household = input.household;
     const programme = detectProgramme(input.note);
     const urgency = detectUrgency(input.note);
     const summary = extractSummary(input.note, household?.name ?? null, household?.village ?? null);
@@ -219,7 +205,7 @@ export const aiService = {
     const suggestedActions = getSuggestedActions(programme);
     const documentsNeeded = getDocumentsNeeded(programme);
     const donorReportDraft = buildDonorDraft(programme, household?.name ?? null);
-    const risk = detectDuplicateRisk(input.householdId, input.note, programme);
+    const risk = detectDuplicateRisk(household, input.note, programme);
 
     const draft: AIDraft = {
       summary,

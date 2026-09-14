@@ -15,8 +15,17 @@ export default function AccessLogsPage() {
   const [q, setQ] = useState("");
 
   useEffect(() => {
-    setLogs(accessLogService.list());
-    setLoading(false);
+    let active = true;
+    setLoading(true);
+    accessLogService.list().then((rows) => {
+      if (active) {
+        setLogs(rows);
+        setLoading(false);
+      }
+    });
+    return () => {
+      active = false;
+    };
   }, []);
 
   const filtered = logs.filter((l) => {

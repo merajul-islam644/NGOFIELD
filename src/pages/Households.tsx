@@ -1,29 +1,37 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
-import { Search as SearchIcon, Users, Lock } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Search as SearchIcon, Users, Lock, Plus } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { householdService } from "@/services/caseService";
 import type { Household } from "@/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { initials } from "@/lib/utils";
-import { useAuth } from "@/services/authService";
+import { useUser } from "@/app/providers/AuthProvider";
 import { ProgrammeBadge } from "@/components/domain/StatusBadge";
 import { EmptyState } from "@/components/domain/EmptyState";
+import { NewHouseholdDialog } from "@/components/domain/NewHouseholdDialog";
 
 export default function HouseholdsPage() {
-  const { user } = useAuth();
+  const user = useUser();
+  const navigate = useNavigate();
   const [data, setData] = useState<Household[]>([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
+  const [createOpen, setCreateOpen] = useState(false);
+
+  const reload = () => {
+    return householdService.list().then((d) => {
+      setData(d);
+      return d;
+    });
+  };
 
   useEffect(() => {
-    householdService.list().then((d) => {
-      setData(d);
-      setLoading(false);
-    });
+    reload().finally(() => setLoading(false));
   }, []);
 
   const filtered = useMemo(() => {
@@ -49,13 +57,18 @@ export default function HouseholdsPage() {
 
   return (
     <div className="space-y-5">
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight">Households</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {user?.role === "field_officer"
-            ? "Households assigned to you"
-            : `${data.length} households across 4 districts`}
-        </p>
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Households</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {user?.role === "field_officer"
+              ? "Households assigned to you"
+              : `${data.length} households across 4 districts`}
+          </p>
+        </div>
+        <Button onClick={() => setCreateOpen(true)}>
+          <Plus className="h-4 w-4" />New household
+        </Button>
       </header>
 
       <Card>
@@ -75,8 +88,21 @@ export default function HouseholdsPage() {
       {filtered.length === 0 ? (
         <EmptyState
           icon={<Users className="h-6 w-6 text-muted-foreground" />}
-          title="No households match your filters"
-          description={user?.role === "field_officer" ? "You can only see households in your assigned areas." : "Try adjusting your search."}
+          title={data.length === 0 ? "No households registered yet" : "No households match your filters"}
+          description={
+            data.length === 0
+              ? "Register the first household in the programme area to get started."
+              : user?.role === "field_officer"
+                ? "You can only see households in your assigned areas."
+                : "Try adjusting your search."
+          }
+          action={
+            data.length === 0 ? (
+              <Button onClick={() => setCreateOpen(true)}>
+                <Plus className="h-4 w-4" />Register first household
+              </Button>
+            ) : undefined
+          }
         />
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -113,6 +139,15 @@ export default function HouseholdsPage() {
           ))}
         </div>
       )}
+
+      <NewHouseholdDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        onCreated={(id) => {
+          reload();
+          navigate(`/households/${id}`);
+        }}
+      />
     </div>
   );
 }

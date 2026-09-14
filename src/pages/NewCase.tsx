@@ -36,15 +36,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
-import { caseService, officerService } from "@/services/caseService";
+import { caseService, householdService, officerService } from "@/services/caseService";
 import { aiService } from "@/services/aiService";
-import { useAuth } from "@/services/authService";
-import { HOUSEHOLDS } from "@/data/households";
+import { useUser } from "@/app/providers/AuthProvider";
 import { useToast } from "@/services/toastService";
 import { accessLogService } from "@/services/accessLogService";
-import { cn, currency, formatDate } from "@/lib/utils";
+import { cn, currency } from "@/lib/utils";
 import { ProgrammeBadge, PriorityBadge, StatusBadge } from "@/components/domain/StatusBadge";
-import type { AIDraft, DuplicateRisk, Priority, Programme } from "@/types";
+import type { AIDraft, DuplicateRisk, Household, Priority, Programme } from "@/types";
 
 type Step = "household" | "programme" | "note" | "analyze" | "review" | "duplicate" | "submitted";
 
@@ -65,7 +64,7 @@ const SAMPLE_NOTES: Record<Programme, string> = {
 
 export default function NewCasePage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const user = useUser();
   const { success, info } = useToast();
 
   const [step, setStep] = useState<Step>("household");
@@ -81,22 +80,31 @@ export default function NewCasePage() {
   const [submitting, setSubmitting] = useState(false);
   const [officers, setOfficers] = useState<any[]>([]);
   const [officerId, setOfficerId] = useState<string>("");
+  const [households, setHouseholds] = useState<Household[]>([]);
+  const [householdsLoading, setHouseholdsLoading] = useState(true);
 
   const filteredHouseholds = useMemo(() => {
     const q = search.toLowerCase().trim();
-    if (!q) return HOUSEHOLDS.slice(0, 6);
-    return HOUSEHOLDS.filter(
+    if (!q) return households.slice(0, 6);
+    return households.filter(
       (h) =>
         h.name.toLowerCase().includes(q) ||
         h.id.toLowerCase().includes(q) ||
         h.village.toLowerCase().includes(q) ||
         h.union.toLowerCase().includes(q),
     ).slice(0, 8);
-  }, [search]);
+  }, [search, households]);
 
-  const selectedHousehold = useMemo(() => HOUSEHOLDS.find((h) => h.id === householdId) ?? null, [householdId]);
+  const selectedHousehold = useMemo(
+    () => households.find((h) => h.id === householdId) ?? null,
+    [householdId, households],
+  );
 
   useEffect(() => {
+    householdService.list().then((rows) => {
+      setHouseholds(rows);
+      setHouseholdsLoading(false);
+    });
     officerService.list().then(setOfficers);
   }, []);
 
@@ -119,7 +127,7 @@ export default function NewCasePage() {
       setProgress(((i + 1) / steps.length) * 100);
       await new Promise((r) => setTimeout(r, 540));
     }
-    const result = await aiService.analyze({ note, householdId });
+    const result = await aiService.analyze({ note, household: selectedHousehold });
     setAiResult(result);
     setEditedDraft(result.draft);
     setStipend(result.draft.proposedStipend ?? "");
@@ -203,40 +211,50 @@ export default function NewCasePage() {
                 className="pl-9"
               />
             </div>
-            <ul className="grid gap-2 sm:grid-cols-2">
-              {filteredHouseholds.map((h) => {
-                const selected = householdId === h.id;
-                return (
-                  <li key={h.id}>
-                    <button
-                      type="button"
-                      onClick={() => setHouseholdId(h.id)}
-                      className={cn(
-                        "flex w-full items-start gap-3 rounded-lg border p-3 text-left transition-all",
-                        selected ? "border-primary bg-primary/5 ring-1 ring-primary/30" : "hover:border-primary/40 hover:bg-accent",
-                      )}
-                    >
-                      <span className="grid h-10 w-10 flex-shrink-0 place-items-center rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 text-xs font-semibold text-white">
-                        {h.name.split(" ").slice(0, 2).map((n) => n[0]).join("")}
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium">{h.name}</p>
-                        <p className="text-xs text-muted-foreground">{h.id} · {h.village}, {h.union}</p>
-                        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                          <Badge variant="outline" className="rounded-md px-1.5 text-[10px]">{h.district}</Badge>
-                          {h.activeProgrammes.map((p) => (
-                            <ProgrammeBadge key={p} programme={p} className="px-1.5 text-[10px]" />
-                          ))}
-                        </div>
-                      </div>
-                      {selected && <CheckCircle2 className="h-5 w-5 flex-shrink-0 text-primary" />}
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-            {filteredHouseholds.length === 0 && (
-              <Alert variant="info" title="No households found">Try searching by a different term. The demo dataset includes 15 households across Kurigram, Gaibandha, Jamalpur and Cox's Bazar.</Alert>
+            {householdsLoading ? (
+              <div className="grid gap-2 sm:grid-cols-2">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <Skeleton key={i} className="h-16 w-full rounded-lg" />
+                ))}
+              </div>
+            ) : (
+              <>
+                <ul className="grid gap-2 sm:grid-cols-2">
+                  {filteredHouseholds.map((h) => {
+                    const selected = householdId === h.id;
+                    return (
+                      <li key={h.id}>
+                        <button
+                          type="button"
+                          onClick={() => setHouseholdId(h.id)}
+                          className={cn(
+                            "flex w-full items-start gap-3 rounded-lg border p-3 text-left transition-all",
+                            selected ? "border-primary bg-primary/5 ring-1 ring-primary/30" : "hover:border-primary/40 hover:bg-accent",
+                          )}
+                        >
+                          <span className="grid h-10 w-10 flex-shrink-0 place-items-center rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 text-xs font-semibold text-white">
+                            {h.name.split(" ").slice(0, 2).map((n) => n[0]).join("")}
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium">{h.name}</p>
+                            <p className="text-xs text-muted-foreground">{h.id} · {h.village}, {h.union}</p>
+                            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                              <Badge variant="outline" className="rounded-md px-1.5 text-[10px]">{h.district}</Badge>
+                              {h.activeProgrammes.map((p) => (
+                                <ProgrammeBadge key={p} programme={p} className="px-1.5 text-[10px]" />
+                              ))}
+                            </div>
+                          </div>
+                          {selected && <CheckCircle2 className="h-5 w-5 flex-shrink-0 text-primary" />}
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+                {filteredHouseholds.length === 0 && (
+                  <Alert variant="info" title="No households found">Try searching by a different term. Households are listed as they match.</Alert>
+                )}
+              </>
             )}
             <div className="flex justify-end">
               <Button disabled={!householdId} onClick={() => setStep("programme")}>
