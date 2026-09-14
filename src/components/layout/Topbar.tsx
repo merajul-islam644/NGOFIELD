@@ -10,6 +10,7 @@ import {
   Info,
   CheckCircle2,
   LogOut,
+  UserCircle,
   RefreshCw,
   Users,
   FolderOpenDot,
@@ -137,6 +138,7 @@ export function Topbar({
       "/donor-reports": t("nav.donorReports"),
       "/access-logs": t("nav.accessLogs"),
       "/search": t("page.search"),
+      "/profile": t("page.profile"),
     };
     const exact = PAGE_TITLE_KEYS[location.pathname];
     if (exact) return exact;
@@ -166,13 +168,15 @@ export function Topbar({
   const filteredHouseholds = useMemo(() => {
     const q = search.toLowerCase().trim();
     if (!q) return households.slice(0, 6);
-    return households.filter(
-      (h) =>
-        h.name.toLowerCase().includes(q) ||
-        h.id.toLowerCase().includes(q) ||
-        h.village.toLowerCase().includes(q) ||
-        h.union.toLowerCase().includes(q),
-    ).slice(0, 8);
+    return households
+      .filter(
+        (h) =>
+          h.name.toLowerCase().includes(q) ||
+          h.id.toLowerCase().includes(q) ||
+          h.village.toLowerCase().includes(q) ||
+          h.union.toLowerCase().includes(q),
+      )
+      .slice(0, 8);
   }, [search, households]);
 
   const filteredCases = useMemo(() => {
@@ -219,14 +223,13 @@ export function Topbar({
         <Menu className="h-5 w-5" />
       </Button>
       <div className="min-w-0 flex-1">
-        <p className="text-xs text-muted-foreground hidden md:block">
+        {/* <p className="text-xs text-muted-foreground hidden md:block">
           {ROLE_LABEL[user.role]}
         </p>
         <h1 className="truncate text-base font-semibold tracking-tight md:text-lg">
           {title}
-        </h1>
+        </h1> */}
       </div>
-
 
       {/* <Button
         variant="soft"
@@ -289,6 +292,9 @@ export function Topbar({
             </div>
           </div>
           <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => navigate("/profile")}>
+            <UserCircle className="h-4 w-4" /> Profile
+          </DropdownMenuItem>
           <DropdownMenuItem
             onClick={async () => {
               await logout();
@@ -497,7 +503,11 @@ function ThemeToggle() {
 
 function LanguageToggle() {
   const { locale, setLocale, t } = useI18n();
-  const [languages, setLanguages] = useState<Locale[]>(["en-US", "de-DE", "bn-BD"]);
+  const [languages, setLanguages] = useState<Locale[]>([
+    "en-US",
+    "de-DE",
+    "bn-BD",
+  ]);
 
   useEffect(() => {
     let cancelled = false;
@@ -513,7 +523,9 @@ function LanguageToggle() {
               "";
             return code;
           })
-          .filter((c): c is Locale => c === "en-US" || c === "de-DE" || c === "bn-BD");
+          .filter(
+            (c): c is Locale => c === "en-US" || c === "de-DE" || c === "bn-BD",
+          );
         if (codes.length > 0) setLanguages(codes);
       })
       .catch(() => {

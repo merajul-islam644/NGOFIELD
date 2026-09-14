@@ -21,6 +21,7 @@ import ProgrammeReportsPage from "@/pages/ProgrammeReports";
 import DonorReportsPage from "@/pages/DonorReports";
 import AccessLogsPage from "@/pages/AccessLogs";
 import SearchPage from "@/pages/Search";
+import ProfilePage from "@/pages/Profile";
 
 export default function App() {
   return (
@@ -78,6 +79,7 @@ export default function App() {
                       }
                     />
                     <Route path="/search" element={<SearchPage />} />
+                    <Route path="/profile" element={<ProfilePage />} />
                   </Route>
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>

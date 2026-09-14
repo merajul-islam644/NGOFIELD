@@ -47,7 +47,7 @@ export default function LoginPage() {
 
   return (
     <div className="grid min-h-screen w-full lg:grid-cols-2">
-      {/* Left — branding (unchanged from demo build) */}
+      {/* Left — branding */}
       <div className="relative hidden overflow-hidden bg-slate-950 text-slate-100 lg:block">
         <div
           className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.25),transparent_50%),radial-gradient(circle_at_bottom_right,rgba(99,102,241,0.25),transparent_55%)]"
