@@ -1,0 +1,59 @@
+{
+  "app": {
+    "name": "এনজিওফিল্ড",
+    "tagline": "কেস ম্যানেজমেন্ট",
+    "description": "উপকারভোগীর অনুরোধ ও কেস ফলো-আপ"
+  },
+  "nav": {
+    "dashboard": "ড্যাশবোর্ড",
+    "cases": "কেসসমূহ",
+    "households": "পরিবার",
+    "followUps": "ফলো-আপ",
+    "education": "শিক্ষা",
+    "livelihood": "জীবিকা",
+    "health": "স্বাস্থ্য",
+    "team": "টিম ও বরাদ্দ",
+    "programmeReports": "কর্মসূচি প্রতিবেদন",
+    "donorReports": "দাতা প্রতিবেদন",
+    "accessLogs": "অ্যাক্সেস লগ",
+    "workspace": "কর্মক্ষেত্র",
+    "programmes": "কর্মসূচি",
+    "operations": "কার্যক্রম"
+  },
+  "sidebar": {
+    "newCase": "নতুন কেস",
+    "search": "অনুসন্ধান…",
+    "expand": "সাইডবার বিস্তৃত করুন",
+    "collapse": "সাইডবার সংকুচিত করুন"
+  },
+  "topbar": {
+    "searchPlaceholder": "পরিবার, কেস বা গ্রাম খুঁজুন…",
+    "notifications": "বিজ্ঞপ্তি",
+    "unread": "{n}টি অপঠিত",
+    "markAllRead": "সব পঠিত হিসেবে চিহ্নিত করুন",
+    "profile": "প্রোফাইল",
+    "fieldOfficer": "ফিল্ড অফিসার",
+    "programmeCoordinator": "কর্মসূচি সমন্বয়কারী",
+    "regionalManager": "আঞ্চলিক ব্যবস্থাপক",
+    "theme": "থিম",
+    "language": "ভাষা",
+    "themeSystem": "থিম: {mode}{sys}",
+    "languageActive": "ভাষা: {name}"
+  },
+  "common": {
+    "active": "সক্রিয়",
+    "systemTheme": " (সিস্টেম)",
+    "english": "English",
+    "german": "জার্মান",
+    "bengali": "বাংলা",
+    "light": "হালকা",
+    "dark": "গাঢ়",
+    "system": "সিস্টেম",
+    "appearance": "চেহারা"
+  },
+  "page": {
+    "caseDetail": "কেস বিস্তারিত",
+    "householdProfile": "পরিবারের প্রোফাইল",
+    "programme": "কর্মসূচি"
+  }
+}

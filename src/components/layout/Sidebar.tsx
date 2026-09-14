@@ -15,7 +15,8 @@ import {
   Plus,
   Search,
 } from "lucide-react";
-import { useAuth, ROLE_LABEL } from "@/services/authService";
+import { useUser } from "@/app/providers/AuthProvider";
+import { ROLE_LABEL } from "@/services/authService";
 import { useI18n } from "@/services/i18n";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -123,7 +124,7 @@ const NAV: { sectionKey: string; items: NavItem[] }[] = [
         to: "/access-logs",
         labelKey: "nav.accessLogs",
         icon: ScrollText,
-        roles: ["regional_manager"],
+        roles: ["programme_coordinator", "regional_manager"],
       },
     ],
   },
@@ -136,7 +137,7 @@ export function Sidebar({
   onToggleCollapse,
   onOpenSearch,
 }: SidebarProps) {
-  const { user } = useAuth();
+  const user = useUser();
   const { t } = useI18n();
   const location = useLocation();
   if (!user) return null;
@@ -202,7 +203,7 @@ export function Sidebar({
           </div>
         )}
 
-        {/* Search — desktop only */}
+        {/* Search — desktop only
         {!collapsed && (
           <div className="hidden md:block px-3 pt-3">
             <Link
@@ -215,7 +216,7 @@ export function Sidebar({
               <span className="kbd">⌘K</span>
             </Link>
           </div>
-        )}
+        )} */}
 
         {/* New case button */}
         <div className={cn("px-3 pt-3", collapsed && "md:px-2")}>

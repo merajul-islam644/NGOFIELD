@@ -1,0 +1,59 @@
+{
+  "app": {
+    "name": "NGOField",
+    "tagline": "Fallmanagement",
+    "description": "Anfragen von Begünstigten und Fallverfolgung"
+  },
+  "nav": {
+    "dashboard": "Übersicht",
+    "cases": "Fälle",
+    "households": "Haushalte",
+    "followUps": "Wiedervorlagen",
+    "education": "Bildung",
+    "livelihood": "Lebensunterhalt",
+    "health": "Gesundheit",
+    "team": "Team & Zuweisungen",
+    "programmeReports": "Programmberichte",
+    "donorReports": "Geberberichte",
+    "accessLogs": "Zugriffsprotokolle",
+    "workspace": "Arbeitsbereich",
+    "programmes": "Programme",
+    "operations": "Betrieb"
+  },
+  "sidebar": {
+    "newCase": "Neuer Fall",
+    "search": "Suchen…",
+    "expand": "Seitenleiste erweitern",
+    "collapse": "Seitenleiste einklappen"
+  },
+  "topbar": {
+    "searchPlaceholder": "Haushalte, Fälle oder Dörfer suchen…",
+    "notifications": "Benachrichtigungen",
+    "unread": "{n} ungelesen",
+    "markAllRead": "Alle als gelesen markieren",
+    "profile": "Profil",
+    "fieldOfficer": "Außendienstmitarbeiter",
+    "programmeCoordinator": "Programmkoordinator",
+    "regionalManager": "Regionalleiter",
+    "theme": "Design",
+    "language": "Sprache",
+    "themeSystem": "Design: {mode}{sys}",
+    "languageActive": "Sprache: {name}"
+  },
+  "common": {
+    "active": "aktiv",
+    "systemTheme": " (System)",
+    "english": "English",
+    "german": "Deutsch",
+    "bengali": "বাংলা",
+    "light": "Hell",
+    "dark": "Dunkel",
+    "system": "System",
+    "appearance": "Erscheinungsbild"
+  },
+  "page": {
+    "caseDetail": "Falldetails",
+    "householdProfile": "Haushaltsprofil",
+    "programme": "Programm"
+  }
+}

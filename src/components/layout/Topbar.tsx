@@ -10,7 +10,6 @@ import {
   Info,
   CheckCircle2,
   LogOut,
-  UserCog,
   RefreshCw,
   Users,
   FolderOpenDot,
@@ -22,10 +21,12 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useAuth, ROLE_LABEL } from "@/services/authService";
+import { useAuth, useUser } from "@/app/providers/AuthProvider";
+import { ROLE_LABEL } from "@/services/authService";
 import { notificationService } from "@/services/notificationService";
 import { useTheme } from "@/services/themeService";
-import { useI18n } from "@/services/i18n";
+import { useI18n, type Locale } from "@/services/i18n";
+import { blocksClient } from "@/lib/blocks/client";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { initials } from "@/lib/utils";
 import {
@@ -52,10 +53,9 @@ import {
   CommandList,
   CommandShortcut,
 } from "@/components/ui/command";
-import { HOUSEHOLDS } from "@/data/households";
-import { caseService } from "@/services/caseService";
+import { caseService, householdService } from "@/services/caseService";
 import { formatRelative } from "@/lib/utils";
-import type { Notification } from "@/types";
+import type { Household, Notification } from "@/types";
 
 export function Topbar({
   onMenuClick,
@@ -66,7 +66,8 @@ export function Topbar({
   searchOpen: boolean;
   onSearchOpenChange: (open: boolean) => void;
 }) {
-  const { user, switchRole, signOut } = useAuth();
+  const user = useUser();
+  const { logout } = useAuth();
   const { t } = useI18n();
   const location = useLocation();
   const navigate = useNavigate();
@@ -74,15 +75,41 @@ export function Topbar({
   const setSearchOpen = onSearchOpenChange;
   const [search, setSearch] = useState("");
   const [recentCases, setRecentCases] = useState<any[]>([]);
-  const [notifications, setNotifications] = useState<Notification[]>(
-    notificationService.list(),
-  );
+  const [households, setHouseholds] = useState<Household[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
 
+  // Initial load + re-fetch on window focus (e.g. tab switch).
   useEffect(() => {
-    const reload = () => setNotifications(notificationService.list());
-    window.addEventListener("focus", reload);
-    return () => window.removeEventListener("focus", reload);
+    let cancelled = false;
+    const reload = async () => {
+      const next = await notificationService.list();
+      if (!cancelled) setNotifications(next);
+    };
+    void reload();
+    const onFocus = () => void reload();
+    window.addEventListener("focus", onFocus);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("focus", onFocus);
+    };
   }, []);
+
+  // Poll while the dropdown is open so users see fresh items without
+  // switching tabs. No polling when closed — the focus handler covers it.
+  useEffect(() => {
+    if (!notifOpen) return;
+    let cancelled = false;
+    const reload = async () => {
+      const next = await notificationService.list();
+      if (!cancelled) setNotifications(next);
+    };
+    void reload();
+    const id = setInterval(reload, 60_000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [notifOpen]);
 
   // ⌘K shortcut
   useEffect(() => {
@@ -121,24 +148,32 @@ export function Topbar({
     return t("app.name");
   }, [location.pathname, t]);
 
-  // Load recent cases for search (lazy)
+  // Load recent cases + households for search (lazy)
   useEffect(() => {
-    if (searchOpen) {
-      caseService.list({}).then((cs) => setRecentCases(cs.slice(0, 30)));
-    }
+    if (!searchOpen) return;
+    let active = true;
+    caseService.list({}).then((cs) => {
+      if (active) setRecentCases(cs.slice(0, 30));
+    });
+    householdService.list().then((hs) => {
+      if (active) setHouseholds(hs);
+    });
+    return () => {
+      active = false;
+    };
   }, [searchOpen]);
 
   const filteredHouseholds = useMemo(() => {
     const q = search.toLowerCase().trim();
-    if (!q) return HOUSEHOLDS.slice(0, 6);
-    return HOUSEHOLDS.filter(
+    if (!q) return households.slice(0, 6);
+    return households.filter(
       (h) =>
         h.name.toLowerCase().includes(q) ||
         h.id.toLowerCase().includes(q) ||
         h.village.toLowerCase().includes(q) ||
         h.union.toLowerCase().includes(q),
     ).slice(0, 8);
-  }, [search]);
+  }, [search, households]);
 
   const filteredCases = useMemo(() => {
     const q = search.toLowerCase().trim();
@@ -254,27 +289,12 @@ export function Topbar({
             </div>
           </div>
           <DropdownMenuSeparator />
-          <DropdownMenuLabel>Switch role (demo)</DropdownMenuLabel>
-          <DropdownMenuItem onClick={() => switchRole("field_officer")}>
-            <UserCog className="h-4 w-4" /> Field Officer
-            {user.role === "field_officer" && (
-              <CommandShortcut>active</CommandShortcut>
-            )}
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => switchRole("programme_coordinator")}>
-            <UserCog className="h-4 w-4" /> Programme Coordinator
-            {user.role === "programme_coordinator" && (
-              <CommandShortcut>active</CommandShortcut>
-            )}
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => switchRole("regional_manager")}>
-            <UserCog className="h-4 w-4" /> Regional Manager
-            {user.role === "regional_manager" && (
-              <CommandShortcut>active</CommandShortcut>
-            )}
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={signOut}>
+          <DropdownMenuItem
+            onClick={async () => {
+              await logout();
+              navigate("/login", { replace: true });
+            }}
+          >
             <LogOut className="h-4 w-4" /> Sign out
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -291,9 +311,10 @@ export function Topbar({
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => {
-                notificationService.markAllRead();
-                setNotifications(notificationService.list());
+              onClick={async () => {
+                await notificationService.markAllRead();
+                const next = await notificationService.list();
+                setNotifications(next);
               }}
             >
               <RefreshCw className="h-3.5 w-3.5" /> Mark all read
@@ -311,9 +332,10 @@ export function Topbar({
                 <button
                   key={n.id}
                   type="button"
-                  onClick={() => {
-                    notificationService.markRead(n.id);
-                    setNotifications(notificationService.list());
+                  onClick={async () => {
+                    await notificationService.markRead(n.id);
+                    const next = await notificationService.list();
+                    setNotifications(next);
                     setNotifOpen(false);
                     if (n.href) navigate(n.href);
                   }}
@@ -475,8 +497,42 @@ function ThemeToggle() {
 
 function LanguageToggle() {
   const { locale, setLocale, t } = useI18n();
+  const [languages, setLanguages] = useState<Locale[]>(["en-US", "de-DE", "bn-BD"]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void blocksClient.localization
+      .languagesForCurrentTenant()
+      .then((res) => {
+        if (cancelled) return;
+        const codes = (res ?? [])
+          .map((entry) => {
+            const code =
+              (entry as { culture?: string; code?: string }).culture ??
+              (entry as { code?: string }).code ??
+              "";
+            return code;
+          })
+          .filter((c): c is Locale => c === "en-US" || c === "de-DE" || c === "bn-BD");
+        if (codes.length > 0) setLanguages(codes);
+      })
+      .catch(() => {
+        /* keep fallback list */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const labelKey = (code: Locale) => {
+    if (code === "en-US") return "common.english";
+    if (code === "de-DE") return "common.german";
+    return "common.bengali";
+  };
+  const short = (code: Locale) => code.split("-")[0].toUpperCase();
+
   const ariaLabel = t("topbar.languageActive", {
-    name: locale === "bn" ? t("common.bengali") : t("common.english"),
+    name: t(labelKey(locale)),
   });
   return (
     <DropdownMenu>
@@ -493,24 +549,17 @@ function LanguageToggle() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-44">
         <DropdownMenuLabel>{t("topbar.language")}</DropdownMenuLabel>
-        <DropdownMenuItem onClick={() => setLocale("en")}>
-          <span className="inline-flex h-4 w-7 items-center justify-center rounded bg-muted text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            EN
-          </span>
-          {t("common.english")}
-          {locale === "en" && (
-            <CommandShortcut>{t("common.active")}</CommandShortcut>
-          )}
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setLocale("bn")}>
-          <span className="inline-flex h-4 w-7 items-center justify-center rounded bg-muted text-[10px] font-semibold tracking-wider text-muted-foreground">
-            বাং
-          </span>
-          {t("common.bengali")}
-          {locale === "bn" && (
-            <CommandShortcut>{t("common.active")}</CommandShortcut>
-          )}
-        </DropdownMenuItem>
+        {languages.map((code) => (
+          <DropdownMenuItem key={code} onClick={() => setLocale(code)}>
+            <span className="inline-flex h-4 w-7 items-center justify-center rounded bg-muted text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              {short(code)}
+            </span>
+            {t(labelKey(code))}
+            {locale === code && (
+              <CommandShortcut>{t("common.active")}</CommandShortcut>
+            )}
+          </DropdownMenuItem>
+        ))}
       </DropdownMenuContent>
     </DropdownMenu>
   );

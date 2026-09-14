@@ -1,0 +1,59 @@
+{
+  "app": {
+    "name": "NGOField",
+    "tagline": "Case Management",
+    "description": "Beneficiary Request & Case Follow-up"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "cases": "Cases",
+    "households": "Households",
+    "followUps": "Follow-ups",
+    "education": "Education",
+    "livelihood": "Livelihood",
+    "health": "Health",
+    "team": "Team & Assignments",
+    "programmeReports": "Programme Reports",
+    "donorReports": "Donor Reports",
+    "accessLogs": "Access Logs",
+    "workspace": "Workspace",
+    "programmes": "Programmes",
+    "operations": "Operations"
+  },
+  "sidebar": {
+    "newCase": "New Case",
+    "search": "Search…",
+    "expand": "Expand sidebar",
+    "collapse": "Collapse sidebar"
+  },
+  "topbar": {
+    "searchPlaceholder": "Search households, cases, villages…",
+    "notifications": "Notifications",
+    "unread": "{n} unread",
+    "markAllRead": "Mark all read",
+    "profile": "Profile",
+    "fieldOfficer": "Field Officer",
+    "programmeCoordinator": "Programme Coordinator",
+    "regionalManager": "Regional Manager",
+    "theme": "Theme",
+    "language": "Language",
+    "themeSystem": "Theme: {mode}{sys}",
+    "languageActive": "Language: {name}"
+  },
+  "common": {
+    "active": "active",
+    "systemTheme": " (system)",
+    "english": "English",
+    "german": "Deutsch",
+    "bengali": "বাংলা",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System",
+    "appearance": "Appearance"
+  },
+  "page": {
+    "caseDetail": "Case detail",
+    "householdProfile": "Household profile",
+    "programme": "Programme"
+  }
+}

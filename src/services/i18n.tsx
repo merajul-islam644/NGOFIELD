@@ -8,143 +8,52 @@ import {
   useState,
 } from "react";
 import type { ReactNode } from "react";
+import { blocksClient } from "@/lib/blocks/client";
 
-export type Locale = "en" | "bn";
+export type Locale = "en-US" | "de-DE" | "bn-BD";
 
 const STORAGE_KEY = "ngofield.locale.v1";
+const MODULES = ["ngofield"] as const;
 
 type Dict = Record<string, string>;
 
-const en: Dict = {
-  // App
-  "app.name": "NGOField",
-  "app.tagline": "Case Management",
-  "app.description": "Beneficiary Request & Case Follow-up",
-
-  // Sidebar
-  "nav.dashboard": "Dashboard",
-  "nav.cases": "Cases",
-  "nav.households": "Households",
-  "nav.followUps": "Follow-ups",
-  "nav.education": "Education",
-  "nav.livelihood": "Livelihood",
-  "nav.health": "Health",
-  "nav.team": "Team & Assignments",
-  "nav.programmeReports": "Programme Reports",
-  "nav.donorReports": "Donor Reports",
-  "nav.accessLogs": "Access Logs",
-  "nav.workspace": "Workspace",
-  "nav.programmes": "Programmes",
-  "nav.operations": "Operations",
-  "sidebar.newCase": "New Case",
-  "sidebar.search": "Search…",
-  "sidebar.expand": "Expand sidebar",
-  "sidebar.collapse": "Collapse sidebar",
-
-  // Topbar
-  "topbar.searchPlaceholder": "Search households, cases, villages…",
-  "topbar.notifications": "Notifications",
-  "topbar.unread": "{n} unread",
-  "topbar.markAllRead": "Mark all read",
-  "topbar.profile": "Profile",
-  "topbar.switchRole": "Switch role (demo)",
-  "topbar.fieldOfficer": "Field Officer",
-  "topbar.programmeCoordinator": "Programme Coordinator",
-  "topbar.regionalManager": "Regional Manager",
-  "topbar.theme": "Theme",
-  "topbar.language": "Language",
-  "topbar.themeSystem": "Theme: {mode}{sys}",
-  "topbar.languageActive": "Language: {name}",
-
-  // Common
-  "common.active": "active",
-  "common.systemTheme": " (system)",
-  "common.english": "English",
-  "common.bengali": "বাংলা",
-  "common.light": "Light",
-  "common.dark": "Dark",
-  "common.system": "System",
-  "common.appearance": "Appearance",
-
-  // Pages / titles
-  "page.caseDetail": "Case detail",
-  "page.householdProfile": "Household profile",
-  "page.programme": "Programme",
-};
-
-const bn: Dict = {
-  // App
-  "app.name": "এনজিওফিল্ড",
-  "app.tagline": "কেস ম্যানেজমেন্ট",
-  "app.description": "উপকারভোগীর অনুরোধ ও কেস ফলো-আপ",
-
-  // Sidebar
-  "nav.dashboard": "ড্যাশবোর্ড",
-  "nav.cases": "কেসসমূহ",
-  "nav.households": "পরিবার",
-  "nav.followUps": "ফলো-আপ",
-  "nav.education": "শিক্ষা",
-  "nav.livelihood": "জীবিকা",
-  "nav.health": "স্বাস্থ্য",
-  "nav.team": "টিম ও বরাদ্দ",
-  "nav.programmeReports": "কর্মসূচি প্রতিবেদন",
-  "nav.donorReports": "দাতা প্রতিবেদন",
-  "nav.accessLogs": "অ্যাক্সেস লগ",
-  "nav.workspace": "কর্মক্ষেত্র",
-  "nav.programmes": "কর্মসূচি",
-  "nav.operations": "কার্যক্রম",
-  "sidebar.newCase": "নতুন কেস",
-  "sidebar.search": "অনুসন্ধান…",
-  "sidebar.expand": "সাইডবার বিস্তৃত করুন",
-  "sidebar.collapse": "সাইডবার সংকুচিত করুন",
-
-  // Topbar
-  "topbar.searchPlaceholder": "পরিবার, কেস বা গ্রাম খুঁজুন…",
-  "topbar.notifications": "বিজ্ঞপ্তি",
-  "topbar.unread": "{n}টি অপঠিত",
-  "topbar.markAllRead": "সব পঠিত হিসেবে চিহ্নিত করুন",
-  "topbar.profile": "প্রোফাইল",
-  "topbar.switchRole": "ভূমিকা পরিবর্তন (ডেমো)",
-  "topbar.fieldOfficer": "ফিল্ড অফিসার",
-  "topbar.programmeCoordinator": "কর্মসূচি সমন্বয়কারী",
-  "topbar.regionalManager": "আঞ্চলিক ব্যবস্থাপক",
-  "topbar.theme": "থিম",
-  "topbar.language": "ভাষা",
-  "topbar.themeSystem": "থিম: {mode}{sys}",
-  "topbar.languageActive": "ভাষা: {name}",
-
-  // Common
-  "common.active": "সক্রিয়",
-  "common.systemTheme": " (সিস্টেম)",
-  "common.english": "English",
-  "common.bengali": "বাংলা",
-  "common.light": "হালকা",
-  "common.dark": "গাঢ়",
-  "common.system": "সিস্টেম",
-  "common.appearance": "চেহারা",
-
-  // Pages / titles
-  "page.caseDetail": "কেস বিস্তারিত",
-  "page.householdProfile": "পরিবারের প্রোফাইল",
-  "page.programme": "কর্মসূচি",
-};
-
-const TRANSLATIONS: Record<Locale, Dict> = { en, bn };
+/**
+ * Translate keys come from the Blocks localization service, not from inline
+ * dictionaries. `blocksClient.localization.load()` is a public, pre-login
+ * call that returns the merged key/value map for the requested language and
+ * modules. Keys are flattened with `.` (e.g. `nav.dashboard`) and stay that
+ * way to keep call sites in Sidebar/Topbar untouched.
+ */
+async function loadDictionary(locale: Locale): Promise<Dict> {
+  try {
+    const merged = (await blocksClient.localization.load(locale, [
+      ...MODULES,
+    ])) as Record<string, unknown> | null | undefined;
+    const flat: Dict = {};
+    for (const [k, v] of Object.entries(merged ?? {})) {
+      if (typeof v === "string") flat[k] = v;
+    }
+    return flat;
+  } catch {
+    return {};
+  }
+}
 
 function readStoredLocale(): Locale {
-  if (typeof window === "undefined") return "en";
+  if (typeof window === "undefined") return "en-US";
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw === "en" || raw === "bn") return raw;
+    if (raw === "en-US" || raw === "de-DE" || raw === "bn-BD") return raw;
   } catch {
     /* ignore */
   }
-  return "en";
+  return "en-US";
 }
 
 interface I18nContextValue {
   locale: Locale;
   setLocale: (locale: Locale) => void;
+  ready: boolean;
   t: (key: string, vars?: Record<string, string | number>) => string;
 }
 
@@ -161,9 +70,24 @@ applyDocumentLang(INITIAL_LOCALE);
 
 export function I18nProvider({ children }: { children: ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>(INITIAL_LOCALE);
+  const [dict, setDict] = useState<Dict>({});
+  const [ready, setReady] = useState(false);
 
   useLayoutEffect(() => {
     applyDocumentLang(locale);
+  }, [locale]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setReady(false);
+    void loadDictionary(locale).then((next) => {
+      if (cancelled) return;
+      setDict(next);
+      setReady(true);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [locale]);
 
   useEffect(() => {
@@ -178,20 +102,18 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 
   const t = useCallback(
     (key: string, vars?: Record<string, string | number>) => {
-      const dict = TRANSLATIONS[locale] ?? en;
-      const fallback = TRANSLATIONS.en;
-      const raw = dict[key] ?? fallback[key] ?? key;
+      const raw = dict[key] ?? key;
       if (!vars) return raw;
       return raw.replace(/\{(\w+)\}/g, (m, k: string) =>
         vars[k] !== undefined ? String(vars[k]) : m,
       );
     },
-    [locale],
+    [dict],
   );
 
   const value = useMemo<I18nContextValue>(
-    () => ({ locale, setLocale, t }),
-    [locale, setLocale, t],
+    () => ({ locale, setLocale, ready, t }),
+    [locale, setLocale, ready, t],
   );
 
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
