@@ -26,11 +26,11 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/input";
 import { useToast } from "@/services/toastService";
-import { useAuth } from "@/services/authService";
+import { useUser } from "@/app/providers/AuthProvider";
 import { accessLogService } from "@/services/accessLogService";
 
 export default function DonorReportsPage() {
-  const { user } = useAuth();
+  const user = useUser();
   const { success } = useToast();
   const [aggregate, setAggregate] = useState<any>(null);
   const [funnel, setFunnel] = useState<any[]>([]);

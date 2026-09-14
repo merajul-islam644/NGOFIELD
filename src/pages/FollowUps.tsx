@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { caseService, followUpService, officerService } from "@/services/caseService";
-import { useAuth } from "@/services/authService";
+import { useUser } from "@/app/providers/AuthProvider";
 import { isOverdue, isDueToday, formatRelative, formatDate, cn } from "@/lib/utils";
 import { PriorityBadge, ProgrammeBadge } from "@/components/domain/StatusBadge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -20,7 +20,7 @@ import { StatsCard } from "@/components/domain/StatsCard";
 import { useToast } from "@/services/toastService";
 
 export default function FollowUpsPage() {
-  const { user } = useAuth();
+  const user = useUser();
   const { success } = useToast();
   const [params, setParams] = useSearchParams();
   const [items, setItems] = useState<any[]>([]);

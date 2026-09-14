@@ -26,7 +26,7 @@ import { caseService, officerService } from "@/services/caseService";
 import type { CaseRecord, CaseStatus, Priority, Programme } from "@/types";
 import { formatRelative, cn } from "@/lib/utils";
 import { PriorityBadge, ProgrammeBadge, StatusBadge } from "@/components/domain/StatusBadge";
-import { useAuth } from "@/services/authService";
+import { useUser } from "@/app/providers/AuthProvider";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert } from "@/components/ui/alert";
 
@@ -36,7 +36,7 @@ const PROGRAMMES: Programme[] = ["Education", "Livelihood", "Health"];
 const DISTRICTS = ["Kurigram", "Gaibandha", "Jamalpur", "Cox's Bazar"];
 
 export default function CasesPage() {
-  const { user } = useAuth();
+  const user = useUser();
   const [searchParams, setSearchParams] = useSearchParams();
   const [cases, setCases] = useState<CaseRecord[]>([]);
   const [loading, setLoading] = useState(true);

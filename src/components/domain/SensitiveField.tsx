@@ -1,5 +1,5 @@
 import { Lock, ShieldAlert } from "lucide-react";
-import { useAuth } from "@/services/authService";
+import { useUser } from "@/app/providers/AuthProvider";
 import type { Role } from "@/types";
 import { cn } from "@/lib/utils";
 
@@ -13,7 +13,7 @@ interface SensitiveFieldProps {
 }
 
 export function SensitiveField({ children, authorizedRoles, className, inline }: SensitiveFieldProps) {
-  const { user } = useAuth();
+  const user = useUser();
   if (!user) return null;
   const allowed = authorizedRoles ?? ["programme_coordinator", "regional_manager"];
   const canView = allowed.includes(user.role);

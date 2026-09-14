@@ -30,7 +30,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { officerService } from "@/services/caseService";
-import { useAuth } from "@/services/authService";
+import { useUser } from "@/app/providers/AuthProvider";
 import { useToast } from "@/services/toastService";
 import { Skeleton } from "@/components/ui/skeleton";
 import { initials, cn } from "@/lib/utils";
@@ -38,7 +38,7 @@ import type { Officer } from "@/types";
 import { Alert } from "@/components/ui/alert";
 
 export default function TeamPage() {
-  const { user } = useAuth();
+  const user = useUser();
   const { success } = useToast();
   const [officers, setOfficers] = useState<Officer[]>([]);
   const [loading, setLoading] = useState(true);

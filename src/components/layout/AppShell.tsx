@@ -4,13 +4,13 @@ import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
 import { MobileFAB } from "./MobileFAB";
 import { useEffect } from "react";
-import { useAuth } from "@/services/authService";
+import { useUser } from "@/app/providers/AuthProvider";
 
 export function AppShell() {
   const [open, setOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const { user } = useAuth();
+  const user = useUser();
   const navigate = useNavigate();
 
   useEffect(() => {

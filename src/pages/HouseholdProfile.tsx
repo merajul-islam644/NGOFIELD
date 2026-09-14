@@ -23,14 +23,14 @@ import { Alert } from "@/components/ui/alert";
 import { householdService } from "@/services/caseService";
 import type { CaseRecord, FollowUp, Household } from "@/types";
 import { cn, formatDate, formatRelative, initials, isOverdue } from "@/lib/utils";
-import { useAuth } from "@/services/authService";
+import { useUser } from "@/app/providers/AuthProvider";
 import { SensitiveField } from "@/components/domain/SensitiveField";
 import { ProgrammeBadge, PriorityBadge, StatusBadge } from "@/components/domain/StatusBadge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export default function HouseholdProfilePage() {
   const { id } = useParams<{ id: string }>();
-  const { user } = useAuth();
+  const user = useUser();
   const [household, setHousehold] = useState<Household | null>(null);
   const [cases, setCases] = useState<CaseRecord[]>([]);
   const [followUps, setFollowUps] = useState<FollowUp[]>([]);

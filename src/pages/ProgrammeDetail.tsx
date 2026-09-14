@@ -19,7 +19,7 @@ import { caseService, reportService } from "@/services/caseService";
 import type { CaseRecord, Programme } from "@/types";
 import { ProgrammeBadge, PriorityBadge, StatusBadge } from "@/components/domain/StatusBadge";
 import { formatRelative } from "@/lib/utils";
-import { useAuth } from "@/services/authService";
+import { useUser } from "@/app/providers/AuthProvider";
 import { Alert } from "@/components/ui/alert";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip as RTooltip, CartesianGrid, Cell } from "recharts";
 import { SensitiveField } from "@/components/domain/SensitiveField";
@@ -32,7 +32,7 @@ const PROGRAMME_META: Record<string, { name: Programme; icon: any; color: string
 
 export default function ProgrammeDetailPage() {
   const { programmeSlug } = useParams<{ programmeSlug: string }>();
-  const { user } = useAuth();
+  const user = useUser();
   const meta = programmeSlug ? PROGRAMME_META[programmeSlug] : null;
   const [cases, setCases] = useState<CaseRecord[]>([]);
   const [funnel, setFunnel] = useState<any | null>(null);

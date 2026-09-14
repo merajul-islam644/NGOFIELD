@@ -19,7 +19,7 @@ import { StatsCard } from "@/components/domain/StatsCard";
 import { ProgrammeBadge, PriorityBadge, StatusBadge } from "@/components/domain/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useAuth } from "@/services/authService";
+import { useUser } from "@/app/providers/AuthProvider";
 import { caseService, followUpService, householdService, reportService } from "@/services/caseService";
 import { formatRelative, isOverdue } from "@/lib/utils";
 import { Alert } from "@/components/ui/alert";
@@ -36,7 +36,7 @@ interface DashboardData {
 }
 
 export default function DashboardPage() {
-  const { user } = useAuth();
+  const user = useUser();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

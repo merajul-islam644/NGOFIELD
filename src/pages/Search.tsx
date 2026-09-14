@@ -7,12 +7,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { caseService, householdService } from "@/services/caseService";
-import { useAuth } from "@/services/authService";
+import { useUser } from "@/app/providers/AuthProvider";
 import { EmptyState } from "@/components/domain/EmptyState";
 import { StatusBadge, ProgrammeBadge } from "@/components/domain/StatusBadge";
 
 export default function SearchPage() {
-  const { user } = useAuth();
+  const user = useUser();
   const [q, setQ] = useState("");
   const [cases, setCases] = useState<any[]>([]);
   const [households, setHouseholds] = useState<any[]>([]);
