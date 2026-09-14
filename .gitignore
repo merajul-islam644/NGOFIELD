@@ -21,3 +21,8 @@ palette-from-shortcut.png
 palette-from-sidebar.png
 search-moved.png
 search-moved-2.png
+
+# CLI dumps produced during Phase-2 IAM discovery
+clouduser-perms.json
+grants.json
+perm-catalog.json
