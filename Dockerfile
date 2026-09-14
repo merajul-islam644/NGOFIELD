@@ -15,10 +15,12 @@ COPY package.json package-lock.json ./
 RUN npm ci --no-audit --no-fund
 
 COPY tsconfig.json tsconfig.node.json vite.config.ts tailwind.config.js postcss.config.js index.html ./
-# Bundle VITE_* env vars from .env into the production JS so the Blocks
-# client can boot at runtime. The runtime nginx stage only ships dist/,
-# so the values only appear baked into the static bundle.
-COPY .env .env
+# Vite's `.env.production` is the convention file loaded only when
+# running `vite build`. It is the public, non-secret counterpart to a
+# locally-overridden `.env.local`, and is safe to ship in the build
+# context (no client secret is present — VITE_* values are inlined into
+# the static bundle and exposed to the browser regardless).
+COPY .env.production .env.production
 COPY public ./public
 COPY src ./src
 

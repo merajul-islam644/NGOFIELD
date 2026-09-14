@@ -15,6 +15,7 @@ dist-types
 .cert
 
 # Local artifacts and dev screenshots
+.env
 .env.local
 .env.*.local
 .dev.log
