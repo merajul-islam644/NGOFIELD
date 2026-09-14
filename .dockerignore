@@ -1,0 +1,48 @@
+# Exclude everything that doesn't affect the production image.
+# The build context only needs source + manifest files; node_modules and
+# dist/ get installed/built inside the image.
+
+node_modules
+dist
+dist-types
+*.tsbuildinfo
+.cache
+.vite
+
+.git
+.github
+.playwright-mcp
+.cert
+
+# Local artifacts and dev screenshots
+.env
+.env.local
+.env.*.local
+.dev.log
+.vite-dev.log
+npm-cache
+
+dashboard-after.png
+lang-en.png
+lang-bn.png
+palette-from-shortcut.png
+palette-from-sidebar.png
+search-moved.png
+search-moved-2.png
+clouduser-perms.json
+grants.json
+perm-catalog.json
+
+# Schema/rules manifests are CLI-only; not needed in the runtime image.
+blocks.json
+blocks
+
+# Docker files themselves shouldn't be re-copied.
+Dockerfile
+.dockerignore
+nginx.conf
+
+# Docs that don't belong in the image.
+AGENTS.md
+CLAUDE.md
+README.md
