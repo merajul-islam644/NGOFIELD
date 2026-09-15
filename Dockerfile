@@ -37,6 +37,12 @@ RUN npm prune --omit=dev
 
 FROM nginx:1.27-alpine
 
+# Pin the in-container API port so docker-entrypoint.sh's health probe and
+# nginx.conf's proxy_pass agree with `node server/index.js`'s listener.
+# Use API_PORT (not PORT) — many PaaS platforms inject PORT=8080 by default,
+# which would collide with nginx on the same port inside this container.
+ENV API_PORT=3000
+
 # Replace the default site with one that handles SPA routing AND proxies
 # /api/* to the Node API server (which runs on :3000 inside the container).
 COPY nginx.conf /etc/nginx/conf.d/default.conf

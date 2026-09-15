@@ -9,10 +9,12 @@ API_PORT="${API_PORT:-3000}"
 NODE_LOG="${NODE_LOG:-/var/log/node-api.log}"
 
 echo "[entrypoint] starting Node API on :${API_PORT}"
-# Run Node in the background and redirect output to a log file so docker
-# logs can still capture it. We do NOT background the API as a child of
-# PID 1's process group — once we exec nginx, the API keeps running.
-node /app/server/index.js > "${NODE_LOG}" 2>&1 &
+# Run Node in the background. We ALSO tee stdout/stderr to the docker
+# container log (via `tee /proc/1/fd/1`) so every console.log line from
+# server/index.js shows up in `docker logs` immediately — not just on
+# startup failure. The file redirect is kept as a backup for the failure
+# branches below that `cat` it.
+node /app/server/index.js > >(tee -a "${NODE_LOG}" > /proc/1/fd/1) 2>&1 &
 
 NODE_PID=$!
 echo "[entrypoint] Node API pid=${NODE_PID}, waiting for /api/health"

@@ -1,18 +1,24 @@
 // NGOField backend — standalone prod server.
 //
-// Runs on PORT (default 8080) and serves both:
+// Runs on API_PORT (default 3000) and serves both:
 //   - /api/* via the shared `apiRouter` (see ./routes.js)
 //   - the built SPA from dist/ (mirrors the old nginx static + SPA-fallback)
 //
 // In dev, `npm run dev` mounts the same `apiRouter` directly via Vite
 // middleware (see vite.config.ts) so there's one route definition for both.
 //
+// In the Docker image, nginx sits in front on :8080 and proxies /api/* to
+// this Node process on :3000 — see Dockerfile + docker-entrypoint.sh.
+//
 // Env:
 //   ANTHROPIC_API_KEY  (server-only — must NOT be VITE_-prefixed)
 //   ANTHROPIC_MODEL    (optional, default claude-sonnet-4-5)
 //   ANTHROPIC_MAX_TOKENS (optional, default 1024)
 //   VITE_BLOCKS_*      (passed through to the Blocks SDK client used here)
-//   PORT               (optional, default 8080)
+//   API_PORT           (internal port, default 3000 — see Dockerfile for
+//                       why we use API_PORT instead of PORT)
+//   PORT               (ignored; PaaS platforms commonly inject PORT=8080
+//                       which would collide with nginx on the same port)
 
 import express from "express";
 import { readFileSync, existsSync } from "node:fs";
@@ -80,11 +86,18 @@ export function createApp(opts = {}) {
 // ─── Standalone prod entrypoint ─────────────────────────────────────────────
 const isDirectRun = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 if (isDirectRun) {
-  const port = Number(process.env.PORT || 8080);
+  // Use API_PORT (not PORT) so PaaS platforms that auto-inject PORT=8080
+  // don't make Node collide with nginx on the same port. Bind to 0.0.0.0
+  // explicitly so the listener is reachable from nginx (which proxies from
+  // 127.0.0.1 inside the same container). Without 0.0.0.0, some Node builds
+  // default to ::1 (IPv6) only and 127.0.0.1 connections from nginx hang.
+  const port = Number(process.env.API_PORT || 3000);
   const app = createApp({ serveStatic: "auto" });
-  app.listen(port, () => {
+  app.listen(port, "0.0.0.0", () => {
     const ai = isAnthropicConfigured() ? "anthropic" : "heuristic-fallback";
     // eslint-disable-next-line no-console
-    console.log(`[ngofield] listening on :${port} (AI mode: ${ai})`);
+    console.log(
+      `[ngofield] listening on 0.0.0.0:${port} (AI mode: ${ai}, model: ${process.env.ANTHROPIC_MODEL || "claude-sonnet-4-5"})`,
+    );
   });
 }
