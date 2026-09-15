@@ -39,10 +39,12 @@ FROM nginx:1.27-alpine
 
 # Install the Node.js runtime. nginx:alpine does NOT ship with `node`, and
 # the entrypoint below runs `node /app/server/index.js` for the /api/*
-# backend. Pin to 20.x to match the build stage's `node:20-alpine` so we
-# don't accidentally run on a different major version at runtime.
+# backend. We don't pin a major version because Alpine 3.21 (the base of
+# nginx:1.27-alpine) dropped nodejs 20 from main — only 22.x is available.
+# The server code only uses stable Node APIs (Express, Anthropic SDK, ESM),
+# so 22.x works without changes.
 # --no-cache keeps the apk index out of the final layer.
-RUN apk add --no-cache "nodejs~=20" "npm~=10"
+RUN apk add --no-cache nodejs npm
 
 # Pin the in-container API port so docker-entrypoint.sh's health probe and
 # nginx.conf's proxy_pass agree with `node server/index.js`'s listener.
