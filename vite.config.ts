@@ -52,7 +52,8 @@ function apiPlugin(): Plugin {
     name: "ngofield-api-middleware",
     async configureServer(server) {
       const express = (await import("express")).default;
-      const { apiRouter } = await import("./server/routes.js");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { apiRouter } = await import("./server/routes.js") as any;
       const apiApp = express();
       apiApp.use(express.json({ limit: "256kb" }));
       // Mount apiRouter at root: Vite's middleware iteration strips the
@@ -63,12 +64,17 @@ function apiPlugin(): Plugin {
       server.middlewares.use("/api", (req, res, _viteNext) => {
         // Hand the request to the Express app with OUR callback so Express
         // never propagates "no match" back into Vite's HTTP/2 connect chain.
-        apiApp(req, res, (err) => {
+        // The req/res coming from Vite's connect middleware are Node's
+        // IncomingMessage/ServerResponse — Express accepts those at runtime
+        // (and re-enhances res with .json/.send) so the cast is safe.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        apiApp(req as any, res as any, (err: unknown) => {
           if (res.headersSent) return;
           if (err) {
-            res.statusCode = err.status || 500;
+            const e = err as { status?: number; message?: string };
+            res.statusCode = e.status || 500;
             res.setHeader("Content-Type", "application/json");
-            res.end(JSON.stringify({ error: err.message }));
+            res.end(JSON.stringify({ error: e.message }));
           } else {
             res.statusCode = 404;
             res.setHeader("Content-Type", "application/json");
