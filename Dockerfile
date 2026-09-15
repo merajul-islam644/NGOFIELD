@@ -37,6 +37,13 @@ RUN npm prune --omit=dev
 
 FROM nginx:1.27-alpine
 
+# Install the Node.js runtime. nginx:alpine does NOT ship with `node`, and
+# the entrypoint below runs `node /app/server/index.js` for the /api/*
+# backend. Pin to 20.x to match the build stage's `node:20-alpine` so we
+# don't accidentally run on a different major version at runtime.
+# --no-cache keeps the apk index out of the final layer.
+RUN apk add --no-cache "nodejs~=20" "npm~=10"
+
 # Pin the in-container API port so docker-entrypoint.sh's health probe and
 # nginx.conf's proxy_pass agree with `node server/index.js`'s listener.
 # Use API_PORT (not PORT) — many PaaS platforms inject PORT=8080 by default,
