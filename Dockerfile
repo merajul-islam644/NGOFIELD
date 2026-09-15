@@ -22,6 +22,10 @@ COPY tsconfig.json tsconfig.node.json vite.config.ts tailwind.config.js postcss.
 # the static bundle and exposed to the browser regardless).
 COPY .env.production .env.production
 COPY public ./public
+# `server/` is required here because vite.config.ts imports `./server/routes.js`
+# and tsconfig.node.json pulls in `server/**/*.d.ts` for type-checking. The
+# runtime stage below already re-COPYs this directory into the final image.
+COPY server ./server
 COPY src ./src
 
 RUN npm run build
