@@ -40,10 +40,6 @@ blocks
 # Dockerfile is referenced by name only (kaniko reads it directly); the
 # build doesn't COPY it into the image. .dockerignore itself must NOT be
 # in this list (the daemon reads it during build).
-#
-# nginx.conf IS copied into the runtime stage (COPY nginx.conf
-# /etc/nginx/conf.d/default.conf) — excluding it here caused the first
-# build to fail with "copy failed: no source files specified".
 Dockerfile
 
 # Docs that don't belong in the image.

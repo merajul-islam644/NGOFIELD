@@ -65,7 +65,7 @@ const SAMPLE_NOTES: Record<Programme, string> = {
 export default function NewCasePage() {
   const navigate = useNavigate();
   const user = useUser();
-  const { success, info } = useToast();
+  const { success, info, warning } = useToast();
 
   const [step, setStep] = useState<Step>("household");
   const [search, setSearch] = useState("");
@@ -131,6 +131,14 @@ export default function NewCasePage() {
     setAiResult(result);
     setEditedDraft(result.draft);
     setStipend(result.draft.proposedStipend ?? "");
+    if (result.fallback) {
+      warning(
+        "AI unavailable — using rule-based draft",
+        result.reason ?? "Set ANTHROPIC_API_KEY to enable real LLM analysis.",
+      );
+    } else {
+      info("AI draft ready", "Review the fields below before submitting for coordinator approval.");
+    }
     if (result.risk && result.risk.relatedCaseId) {
       setStep("duplicate");
     } else {

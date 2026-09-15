@@ -1,4 +1,15 @@
-import type { AIDraft, DuplicateRisk, Household, Priority, Programme } from "@/types";
+// Frontend AI service — thin wrapper around the POST /api/analyze endpoint
+// served by `server/index.js` (mounted as Vite middleware in dev, run
+// standalone in prod).
+//
+// The 5-step UI animation in NewCase.tsx keeps working unchanged: this
+// service still exposes `analyzeStream()` that yields the same labelled
+// progress events while the real fetch is in flight.
+//
+// If the server responds with `fallback: true` (no API key / upstream error),
+// we surface a one-line toast so the user knows the draft is rule-based.
+
+import type { AIDraft, DuplicateRisk, Household } from "@/types";
 
 export interface AnalyzeInput {
   note: string;
@@ -14,211 +25,72 @@ export interface AnalyzeProgress {
 export interface AnalyzeResult {
   draft: AIDraft;
   risk: DuplicateRisk | null;
+  /** True when the server returned a heuristic fallback (no key / upstream error). */
+  fallback?: boolean;
+  reason?: string;
 }
 
-const PROGRAMME_KEYWORDS: { programme: Programme; patterns: RegExp[] }[] = [
-  {
-    programme: "Education",
-    patterns: [
-      /\bstipend\b/i,
-      /\bschool\b/i,
-      /\bclass\s*\d+/i,
-      /\bdrop\s*(out|3 mas|3 month)/i,
-      /\bmeye\b/i,
-      /\bchele\b/i,
-      /\bschool sir\b/i,
-      /\badmission\b/i,
-      /\bcollege\b/i,
-      /\btuition\b/i,
-    ],
-  },
-  {
-    programme: "Health",
-    patterns: [
-      /\bhealth\b/i,
-      /\bdoctor\b/i,
-      /\bmedicine\b/i,
-      /\bpregnan/i,
-      /\b(MAM|SAM)\b/i,
-      /\bnutrition\b/i,
-      /\bsick\b/i,
-      /\btherapy\b/i,
-      /\bvaccin/i,
-    ],
-  },
-  {
-    programme: "Livelihood",
-    patterns: [
-      /\bincome\b/i,
-      /\b(nai|nil)\b/i,
-      /\bVGD\b/i,
-      /\bsewing\b/i,
-      /\brickshaw\b/i,
-      /\bpoultry\b/i,
-      /\bgoat/i,
-      /\benterprise\b/i,
-      /\bkormo\b/i,
-      /\bbusiness\b/i,
-    ],
-  },
+const PROGRESS_STEPS = [
+  "Extracting household context",
+  "Identifying programme need",
+  "Assessing urgency",
+  "Reviewing household history",
+  "Checking duplicate-assistance risk",
 ];
 
-const URGENT_TERMS = [/\b3 mas\b/i, /\bdrop\b/i, /\bincome nai\b/i, /\bswami na thaka\b/i, /\bVGD nai\b/i];
+interface AnalyzeResponse {
+  draft: AIDraft;
+  risk: DuplicateRisk | null;
+  fallback?: boolean;
+  reason?: string;
+}
 
-function detectProgramme(note: string): Programme {
-  const lower = note;
-  let best: Programme = "Education";
-  let bestScore = 0;
-  for (const { programme, patterns } of PROGRAMME_KEYWORDS) {
-    const score = patterns.reduce((s, p) => s + (p.test(lower) ? 1 : 0), 0);
-    if (score > bestScore) {
-      bestScore = score;
-      best = programme;
+const FETCH_TIMEOUT_MS = 25_000;
+
+async function postAnalyze(input: AnalyzeInput): Promise<AnalyzeResponse> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  try {
+    const res = await fetch("/api/analyze", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+      signal: controller.signal,
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      throw new Error(`HTTP ${res.status}: ${text || res.statusText}`);
     }
+    return (await res.json()) as AnalyzeResponse;
+  } finally {
+    clearTimeout(timeout);
   }
-  return best;
-}
-
-function detectUrgency(note: string): Priority {
-  if (URGENT_TERMS.some((p) => p.test(note))) return "High";
-  if (note.length < 80) return "Low";
-  return "Medium";
-}
-
-function extractSummary(note: string, household: string | null, village: string | null): string {
-  if (household && village) {
-    return `${household} from ${village} requires assistance — see structured context for primary need and household circumstances.`;
-  }
-  return `Field note captured during household visit. Programme need and urgency identified below.`;
-}
-
-function buildHouseholdContext(household: Household | null, membersLine: string) {
-  if (!household) return `Field note received — household profile to be verified on first follow-up visit. ${membersLine}`;
-  return `${household.members.length}-member household in ${household.union}, ${household.village}. Previously supported programmes: ${household.activeProgrammes.length ? household.activeProgrammes.join(", ") : "none"}.`;
-}
-
-function buildDonorDraft(programme: Programme, household: string | null) {
-  const name = household ?? "the household";
-  switch (programme) {
-    case "Education":
-      return `Provided education support to ${name}, restoring school continuity for one school-age child.`;
-    case "Health":
-      return `Provided health support to ${name}, addressing the identified health need through programme referral.`;
-    case "Livelihood":
-      return `Strengthened the household economy of ${name} through targeted livelihood assistance.`;
-  }
-}
-
-function getSuggestedActions(programme: Programme): string[] {
-  switch (programme) {
-    case "Education":
-      return [
-        "Verify school attendance and dropout record",
-        "Confirm stipend eligibility against Education criteria",
-        "Coordinate with headmaster for school certificate",
-        "Document collection: birth certificate and household ledger",
-      ];
-    case "Health":
-      return [
-        "Refer to Upazila Health Complex if required",
-        "Conduct nutrition or health screening",
-        "Document symptoms and history",
-        "Schedule follow-up visit within 14 days",
-      ];
-    case "Livelihood":
-      return [
-        "Verify livelihood skill and experience",
-        "Coordinate with cooperative or programme partner",
-        "Document household income and asset status",
-        "Plan asset delivery timeline and monitoring",
-      ];
-  }
-}
-
-function getDocumentsNeeded(programme: Programme): string[] {
-  switch (programme) {
-    case "Education":
-      return ["School attendance certificate", "Household income declaration", "Beneficiary NID copy", "Birth certificate"];
-    case "Health":
-      return ["UHC referral slip", "Medical history", "Household income declaration", "Vulnerability assessment"];
-    case "Livelihood":
-      return ["Trade or skill certificate", "Cooperative enrolment form", "Land or asset record", "Income declaration"];
-  }
-}
-
-function detectDuplicateRisk(
-  household: Household | null,
-  note: string,
-  programme: Programme,
-): DuplicateRisk | null {
-  if (!household) return null;
-  // The historical demo flagged Rekha Bibi + Education → prior Health case.
-  // In the live app that hint lives on the Household schema (e.g. an
-  // `activeProgrammes` overlap with the new programme). The check below is
-  // a generic version of the same idea.
-  if (household.activeProgrammes.includes(programme)) {
-    return {
-      level: "low",
-      summary: `Household already enrolled in ${programme} programme.`,
-      relatedProgramme: programme,
-      detail: "Cross-check history to ensure complementary support and avoid overlap.",
-    };
-  }
-  if (/VGD/i.test(note) && household.income !== undefined && household.income < 6000) {
-    return {
-      level: "low",
-      summary: "Household income below safety-net threshold — verify no VGD overlap.",
-      detail: "Field note references VGD card status. Confirm eligibility against safety-net registry to avoid duplicate registration.",
-    };
-  }
-  return null;
 }
 
 export const aiService = {
-  /** Streaming-style progress callback. */
+  /** Streaming-style progress callback used by NewCase.tsx's stepper. */
   async *analyzeStream(input: AnalyzeInput): AsyncGenerator<AnalyzeProgress, AnalyzeResult, void> {
-    const steps = [
-      "Extracting household context",
-      "Identifying programme need",
-      "Assessing urgency",
-      "Reviewing household history",
-      "Checking duplicate-assistance risk",
-    ];
-    for (let i = 0; i < steps.length; i++) {
-      yield { step: i, label: steps[i], status: "active" };
+    // Kick off the real request immediately so the network round-trip happens
+    // in parallel with the UI animation.
+    const pending = postAnalyze(input).catch((err) => ({ __error: err }));
+
+    for (let i = 0; i < PROGRESS_STEPS.length; i++) {
+      yield { step: i, label: PROGRESS_STEPS[i], status: "active" };
       await new Promise((r) => setTimeout(r, 380));
-      yield { step: i, label: steps[i], status: "complete" };
+      yield { step: i, label: PROGRESS_STEPS[i], status: "complete" };
     }
-    const result = await this.analyze(input);
-    return result;
+
+    const settled = await pending;
+    if ("__error" in settled) {
+      // Network or parse error — surface a clear message to the caller.
+      const message = settled.__error?.message ?? "AI request failed";
+      throw new Error(message);
+    }
+    return { draft: settled.draft, risk: settled.risk, fallback: settled.fallback, reason: settled.reason };
   },
 
   async analyze(input: AnalyzeInput): Promise<AnalyzeResult> {
-    const household = input.household;
-    const programme = detectProgramme(input.note);
-    const urgency = detectUrgency(input.note);
-    const summary = extractSummary(input.note, household?.name ?? null, household?.village ?? null);
-    const membersLine = household
-      ? `Members: ${household.members.map((m) => `${m.name} (${m.relation}, ${m.age})`).join("; ")}.`
-      : "";
-    const householdContext = buildHouseholdContext(household, membersLine);
-    const suggestedActions = getSuggestedActions(programme);
-    const documentsNeeded = getDocumentsNeeded(programme);
-    const donorReportDraft = buildDonorDraft(programme, household?.name ?? null);
-    const risk = detectDuplicateRisk(household, input.note, programme);
-
-    const draft: AIDraft = {
-      summary,
-      need: programme,
-      householdContext,
-      urgency,
-      suggestedActions,
-      documentsNeeded,
-      donorReportDraft,
-      duplicateRisk: risk ?? undefined,
-      proposedStipend: programme === "Education" ? 1200 : programme === "Health" ? 800 : 5000,
-    };
-
-    return { draft, risk };
+    const res = await postAnalyze(input);
+    return { draft: res.draft, risk: res.risk, fallback: res.fallback, reason: res.reason };
   },
 };
