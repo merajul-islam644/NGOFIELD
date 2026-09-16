@@ -133,6 +133,11 @@ function FieldOfficerDashboard({
   officerId: string;
   userName: string;
 }) {
+  // Server-side scope filter lives in blocks/data/rules.json
+  // (Household / Case / FollowUp schemas → field_officer →
+  // "assignedOfficerId == ${user.id}"). The Data Gateway already returns
+  // only this officer's rows; we keep the in-page assignment here as
+  // belt-and-braces so a stale IAM role cannot widen visibility.
   const myHouseholds = data.households.filter(
     (h) => h.assignedOfficerId === officerId,
   );

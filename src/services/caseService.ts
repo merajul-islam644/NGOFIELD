@@ -8,6 +8,7 @@
 // view-model types from `@/types`, in-memory mutations become SDK calls.
 
 import { blocksClient } from "@/lib/blocks/client";
+import { accessLogService } from "@/services/accessLogService";
 import {
   casesCollection,
   caseDocumentsCollection,
@@ -47,20 +48,20 @@ function newId(prefix: string): string {
 // request. Increase if a tenant ever needs more than this.
 const LIST_PAGE_SIZE = 200;
 
-async function listHouseholdsRaw(): Promise<Household[]> {
-  const res = await householdsCollection.list({ pageNo: 1, pageSize: LIST_PAGE_SIZE });
+async function listHouseholdsRaw(pageSize: number = LIST_PAGE_SIZE): Promise<Household[]> {
+  const res = await householdsCollection.list({ pageNo: 1, pageSize });
   const { items } = unwrapList<any>("Household", res);
   // Members are a separate schema; skip the join here — pages that need
   // members fetch them via `householdService.get(id)`.
   return items.map((row) => decodeHousehold(row));
 }
 
-async function listCasesRaw(): Promise<CaseRecord[]> {
+async function listCasesRaw(pageSize: number = LIST_PAGE_SIZE): Promise<CaseRecord[]> {
   const [caseRes, timelineRes, docRes, fuRes] = await Promise.all([
-    casesCollection.list({ pageNo: 1, pageSize: LIST_PAGE_SIZE }),
-    caseTimelineEventsCollection.list({ pageNo: 1, pageSize: LIST_PAGE_SIZE }),
-    caseDocumentsCollection.list({ pageNo: 1, pageSize: LIST_PAGE_SIZE }),
-    followUpsCollection.list({ pageNo: 1, pageSize: LIST_PAGE_SIZE }),
+    casesCollection.list({ pageNo: 1, pageSize }),
+    caseTimelineEventsCollection.list({ pageNo: 1, pageSize }),
+    caseDocumentsCollection.list({ pageNo: 1, pageSize }),
+    followUpsCollection.list({ pageNo: 1, pageSize }),
   ]);
 
   const cases = unwrapList<any>("Case", caseRes).items;
@@ -144,11 +145,13 @@ export interface CaseListFilters {
   officerId?: string;
   sortBy?: "updatedAt" | "priority" | "nextFollowUpAt" | "householdName";
   sortDir?: "asc" | "desc";
+  /** Cap on rows fetched from the Data Gateway before client-side filtering. */
+  pageSize?: number;
 }
 
 export const caseService = {
   async list(filters: CaseListFilters = {}): Promise<CaseRecord[]> {
-    const all = await listCasesRaw();
+    const all = await listCasesRaw(filters.pageSize);
     return filterCases(all, filters);
   },
 
@@ -541,8 +544,8 @@ function filterFollowUps(
 // ─── householdService ────────────────────────────────────────────────────────
 
 export const householdService = {
-  async list(): Promise<Household[]> {
-    return listHouseholdsRaw();
+  async list(opts: { pageSize?: number } = {}): Promise<Household[]> {
+    return listHouseholdsRaw(opts.pageSize);
   },
 
   async get(id: string): Promise<Household | null> {
@@ -849,6 +852,7 @@ export const officerService = {
     officerId: string,
     _toDistrict: string,
     actor: string,
+    actorRole: Role,
   ): Promise<{ transferredOfficer: Officer; replacement: Officer | null; reassignedCases: number }> {
     const officers = await listOfficers();
     const transferred = officers.find((o) => o.id === officerId);
@@ -872,6 +876,16 @@ export const officerService = {
     } catch {
       // IAM update is best-effort; bulk reassignment is the user-visible outcome.
     }
+    // Audit trail: officer transfer is a privileged action and must be
+    // visible in the AccessLog. Per Requirement #7, every privileged
+    // mutation records who, what, and the resource affected.
+    await accessLogService.log({
+      user: actor,
+      userRole: actorRole,
+      action: "Officer transfer",
+      resource: `officer:${transferred.id} → district:${_toDistrict} (replacement:${replacement?.id ?? "none"}, reassignedCases:${reassignedCases})`,
+      reason: "Officer transfer preserves case history; replacement absorbs active caseload.",
+    });
     return {
       transferredOfficer: { ...transferred, status: "Transferred" },
       replacement,

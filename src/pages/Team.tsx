@@ -69,7 +69,12 @@ export default function TeamPage() {
   const handleTransfer = async () => {
     if (!transferTarget) return;
     setSubmitting(true);
-    const res = await officerService.transfer(transferTarget.id, transferTarget.district, user?.name ?? "Unknown");
+    const res = await officerService.transfer(
+      transferTarget.id,
+      transferTarget.district,
+      user?.name ?? "Unknown",
+      (user?.role ?? "field_officer") as any,
+    );
     setResult(res);
     load();
     setSubmitting(false);

@@ -12,7 +12,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { caseService, followUpService, officerService } from "@/services/caseService";
-import { useUser } from "@/app/providers/AuthProvider";
 import { isOverdue, isDueToday, formatRelative, formatDate, cn } from "@/lib/utils";
 import { PriorityBadge, ProgrammeBadge } from "@/components/domain/StatusBadge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -20,7 +19,6 @@ import { StatsCard } from "@/components/domain/StatsCard";
 import { useToast } from "@/services/toastService";
 
 export default function FollowUpsPage() {
-  const user = useUser();
   const { success } = useToast();
   const [params, setParams] = useSearchParams();
   const [items, setItems] = useState<any[]>([]);
@@ -39,6 +37,9 @@ export default function FollowUpsPage() {
 
   useEffect(() => {
     setLoading(true);
+    // Server-side scope filter lives in blocks/data/rules.json
+    // (FollowUp schema → field_officer → "assignedOfficerId == ${user.id}").
+    // The Data Gateway returns only this user's rows.
     Promise.all([
       followUpService.list({
         district,
@@ -48,13 +49,11 @@ export default function FollowUpsPage() {
       }),
       followUpService.getMetrics(),
     ]).then(([list, m]) => {
-      // Field officers only see their own
-      const filtered = user?.role === "field_officer" ? list.filter((f) => f.assignedOfficerId === user.id) : list;
-      setItems(filtered);
+      setItems(list);
       setMetrics(m);
       setLoading(false);
     });
-  }, [district, programme, officerId, status, user]);
+  }, [district, programme, officerId, status]);
 
   const update = (k: string, v: string) => {
     const next = new URLSearchParams(params);

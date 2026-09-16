@@ -144,14 +144,25 @@ export function Topbar({
     return t("app.name");
   }, [location.pathname, t]);
 
-  // Load recent cases + households for search (lazy)
+  // Load recent cases + households for search (lazy, bounded).
+  // The Data Gateway applies rules.json scoping before we see the rows,
+  // so a fresh `caseService.list` already excludes rows the current
+  // user has no business reading. We still cap the pageSize here so the
+  // search palette never materialises the whole tenant's table into
+  // memory just to render the top-8 suggestions.
   useEffect(() => {
     if (!searchOpen) return;
     let active = true;
-    caseService.list({}).then((cs) => {
-      if (active) setRecentCases(cs.slice(0, 30));
-    });
-    householdService.list().then((hs) => {
+    caseService
+      .list({
+        sortBy: "updatedAt",
+        sortDir: "desc",
+        pageSize: 30,
+      })
+      .then((cs) => {
+        if (active) setRecentCases(cs.slice(0, 30));
+      });
+    householdService.list({ pageSize: 20 }).then((hs) => {
       if (active) setHouseholds(hs);
     });
     return () => {

@@ -1,3 +1,112 @@
 {
-  "policies": []
+  "policies": [
+    {
+      "schemaName": "Household",
+      "dataAccessPolicies": [
+        {
+          "role": "field_officer",
+          "filter": "assignedOfficerId == ${user.id}",
+          "fieldMask": {
+            "povertyScore": "***",
+            "income": "***",
+            "vulnerability": "***",
+            "healthNotes": "***"
+          }
+        },
+        {
+          "role": "programme_coordinator"
+        },
+        {
+          "role": "regional_manager"
+        }
+      ]
+    },
+    {
+      "schemaName": "Case",
+      "dataAccessPolicies": [
+        {
+          "role": "field_officer",
+          "filter": "assignedOfficerId == ${user.id}"
+        },
+        {
+          "role": "programme_coordinator"
+        },
+        {
+          "role": "regional_manager"
+        }
+      ]
+    },
+    {
+      "schemaName": "FollowUp",
+      "dataAccessPolicies": [
+        {
+          "role": "field_officer",
+          "filter": "assignedOfficerId == ${user.id}"
+        },
+        {
+          "role": "programme_coordinator"
+        },
+        {
+          "role": "regional_manager"
+        }
+      ]
+    },
+    {
+      "schemaName": "CaseDocument",
+      "dataAccessPolicies": [
+        {
+          "role": "field_officer"
+        },
+        {
+          "role": "programme_coordinator"
+        },
+        {
+          "role": "regional_manager"
+        }
+      ]
+    },
+    {
+      "schemaName": "CaseTimelineEvent",
+      "dataAccessPolicies": [
+        {
+          "role": "field_officer"
+        },
+        {
+          "role": "programme_coordinator"
+        },
+        {
+          "role": "regional_manager"
+        }
+      ]
+    },
+    {
+      "schemaName": "HouseholdMember",
+      "dataAccessPolicies": [
+        {
+          "role": "field_officer"
+        },
+        {
+          "role": "programme_coordinator"
+        },
+        {
+          "role": "regional_manager"
+        }
+      ]
+    },
+    {
+      "schemaName": "AccessLog",
+      "dataAccessPolicies": [
+        {
+          "role": "field_officer",
+          "filter": "user == ${user.name}"
+        },
+        {
+          "role": "programme_coordinator"
+        },
+        {
+          "role": "regional_manager"
+        }
+      ]
+    }
+  ]
 }

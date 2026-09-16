@@ -26,7 +26,6 @@ import { caseService, officerService } from "@/services/caseService";
 import type { CaseRecord, CaseStatus, Priority, Programme } from "@/types";
 import { formatRelative, cn } from "@/lib/utils";
 import { PriorityBadge, ProgrammeBadge, StatusBadge } from "@/components/domain/StatusBadge";
-import { useUser } from "@/app/providers/AuthProvider";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert } from "@/components/ui/alert";
 
@@ -36,7 +35,6 @@ const PROGRAMMES: Programme[] = ["Education", "Livelihood", "Health"];
 const DISTRICTS = ["Kurigram", "Gaibandha", "Jamalpur", "Cox's Bazar"];
 
 export default function CasesPage() {
-  const user = useUser();
   const [searchParams, setSearchParams] = useSearchParams();
   const [cases, setCases] = useState<CaseRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -70,15 +68,15 @@ export default function CasesPage() {
         sortDir,
       })
       .then((c) => {
-        // Field officers only see their own cases
-        if (user?.role === "field_officer") {
-          c = c.filter((x) => x.assignedOfficerId === user.id);
-        }
+        // Server-side scope filter lives in blocks/data/rules.json
+        // (Case schema → field_officer → "assignedOfficerId == ${user.id}").
+        // The Data Gateway returns only this user's rows; we keep no in-page
+        // filter so a stale IAM role cannot leak cross-account data here.
         setCases(c);
       })
       .catch((e) => setError(String(e)))
       .finally(() => setLoading(false));
-  }, [search, status, priority, programme, district, officerId, sortBy, sortDir, user]);
+  }, [search, status, priority, programme, district, officerId, sortBy, sortDir]);
 
   // Sync filters into URL
   useEffect(() => {

@@ -36,16 +36,15 @@ export default function HouseholdsPage() {
 
   const filtered = useMemo(() => {
     const v = q.toLowerCase().trim();
-    // Field officers only see their assigned households
-    let scope = data;
-    if (user?.role === "field_officer") {
-      scope = scope.filter((h) => h.assignedOfficerId === user.id);
-    }
-    if (!v) return scope;
-    return scope.filter((h) =>
+    // Server-side scope filter lives in blocks/data/rules.json
+    // (Household schema → field_officer → "assignedOfficerId == ${user.id}").
+    // `data` already contains only this user's rows, so we only apply the
+    // search-text filter here.
+    if (!v) return data;
+    return data.filter((h) =>
       [h.name, h.id, h.village, h.union, h.district].join(" ").toLowerCase().includes(v),
     );
-  }, [q, data, user]);
+  }, [q, data]);
 
   if (loading) {
     return (
