@@ -1,112 +1,136 @@
 {
-  "policies": [
+  "security": [
     {
+      "schemaId": "df28476c-521a-49e0-9642-2de3216d9b54",
       "schemaName": "Household",
-      "dataAccessPolicies": [
+      "fieldSecurityPolicies": [
         {
           "role": "field_officer",
-          "filter": "assignedOfficerId == ${user.id}",
+          "readAccessLevel": 0,
           "fieldMask": {
             "povertyScore": "***",
             "income": "***",
             "vulnerability": "***",
             "healthNotes": "***"
           }
-        },
-        {
-          "role": "programme_coordinator"
-        },
-        {
-          "role": "regional_manager"
         }
       ]
+    }
+  ],
+  "policies": [
+    {
+      "policyName": "Household — officer scope + sensitive mask",
+      "schemaName": "Household",
+      "isAllowPolicy": true,
+      "ruleGroup": {
+        "logicalOperator": 0,
+        "rules": [
+          {
+            "leftOperand": "assignedOfficerId",
+            "operator": 0,
+            "rightOperand": "${user.id}"
+          },
+          {
+            "leftOperand": "user.role",
+            "operator": 1,
+            "rightOperand": "field_officer"
+          }
+        ],
+        "nestedGroups": []
+      }
     },
     {
+      "policyName": "Case — officer scope",
       "schemaName": "Case",
-      "dataAccessPolicies": [
-        {
-          "role": "field_officer",
-          "filter": "assignedOfficerId == ${user.id}"
-        },
-        {
-          "role": "programme_coordinator"
-        },
-        {
-          "role": "regional_manager"
-        }
-      ]
+      "isAllowPolicy": true,
+      "ruleGroup": {
+        "logicalOperator": 0,
+        "rules": [
+          {
+            "leftOperand": "assignedOfficerId",
+            "operator": 0,
+            "rightOperand": "${user.id}"
+          },
+          {
+            "leftOperand": "user.role",
+            "operator": 1,
+            "rightOperand": "field_officer"
+          }
+        ],
+        "nestedGroups": []
+      }
     },
     {
+      "policyName": "FollowUp — officer scope",
       "schemaName": "FollowUp",
-      "dataAccessPolicies": [
-        {
-          "role": "field_officer",
-          "filter": "assignedOfficerId == ${user.id}"
-        },
-        {
-          "role": "programme_coordinator"
-        },
-        {
-          "role": "regional_manager"
-        }
-      ]
+      "isAllowPolicy": true,
+      "ruleGroup": {
+        "logicalOperator": 0,
+        "rules": [
+          {
+            "leftOperand": "assignedOfficerId",
+            "operator": 0,
+            "rightOperand": "${user.id}"
+          },
+          {
+            "leftOperand": "user.role",
+            "operator": 1,
+            "rightOperand": "field_officer"
+          }
+        ],
+        "nestedGroups": []
+      }
     },
     {
+      "policyName": "CaseDocument — officer child-only",
       "schemaName": "CaseDocument",
-      "dataAccessPolicies": [
-        {
-          "role": "field_officer"
-        },
-        {
-          "role": "programme_coordinator"
-        },
-        {
-          "role": "regional_manager"
-        }
-      ]
+      "isAllowPolicy": true,
+      "ruleGroup": {
+        "logicalOperator": 0,
+        "rules": [],
+        "nestedGroups": []
+      }
     },
     {
+      "policyName": "CaseTimelineEvent — officer child-only",
       "schemaName": "CaseTimelineEvent",
-      "dataAccessPolicies": [
-        {
-          "role": "field_officer"
-        },
-        {
-          "role": "programme_coordinator"
-        },
-        {
-          "role": "regional_manager"
-        }
-      ]
+      "isAllowPolicy": true,
+      "ruleGroup": {
+        "logicalOperator": 0,
+        "rules": [],
+        "nestedGroups": []
+      }
     },
     {
+      "policyName": "HouseholdMember — officer child-only",
       "schemaName": "HouseholdMember",
-      "dataAccessPolicies": [
-        {
-          "role": "field_officer"
-        },
-        {
-          "role": "programme_coordinator"
-        },
-        {
-          "role": "regional_manager"
-        }
-      ]
+      "isAllowPolicy": true,
+      "ruleGroup": {
+        "logicalOperator": 0,
+        "rules": [],
+        "nestedGroups": []
+      }
     },
     {
+      "policyName": "AccessLog — officer sees only own entries",
       "schemaName": "AccessLog",
-      "dataAccessPolicies": [
-        {
-          "role": "field_officer",
-          "filter": "user == ${user.name}"
-        },
-        {
-          "role": "programme_coordinator"
-        },
-        {
-          "role": "regional_manager"
-        }
-      ]
+      "isAllowPolicy": true,
+      "ruleGroup": {
+        "logicalOperator": 0,
+        "rules": [
+          {
+            "leftOperand": "user",
+            "operator": 0,
+            "rightOperand": "${user.name}"
+          },
+          {
+            "leftOperand": "user.role",
+            "operator": 1,
+            "rightOperand": "field_officer"
+          }
+        ],
+        "nestedGroups": []
+      }
     }
   ]
 }
